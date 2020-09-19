@@ -3,4 +3,4 @@ project(ECSE427 C)
 
 set(CMAKE_C_STANDARD 99)
 
-add_executable(ECSE427 Tutorial-1/main.c)
+add_executable(ECSE427 sanityCheck.c)

@@ -1,0 +1,7 @@
+version: '3'
+services:
+  c-compiler:
+    build: .
+    ports:
+    - "3333:22"
+

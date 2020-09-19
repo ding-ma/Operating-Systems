@@ -1,0 +1,63 @@
+---
+- name: deploy the CS image software stack
+  hosts: localhost
+  connection: local
+  become: true
+
+  vars:
+    install_packages:
+      - apt-clone
+      - apt-transport-https
+      - build-essential
+      - clang
+      - clang-format
+      - cmake
+      - cmake-extras
+      - curl
+      - emacs
+      - exfat-fuse
+      - exfat-utils
+      - fish
+      - gcc
+      - gcc-multilib
+      - git
+      - htop
+      - libc6-dev
+      - libfuse-dev
+      - libfuse2
+      - libssl-dev
+      - nnn
+      - p7zip-full
+      - pass
+      - screen
+      - sshpass
+      - sysstat
+      - tcl
+      - tcsh
+      - tmpreaper
+      - tmux
+      - unrar
+      - unzip
+      - update-motd
+      - valgrind
+      - vim
+      - xterm
+      - xvfb
+      - xz-utils
+      - zlib1g-dev
+      - zsh
+
+  tasks:
+    - name: Get aptitude for upgrade
+      apt: pkg=aptitude state=present
+
+    - name: Safe system upgrade via aptitude
+      apt: upgrade=safe
+
+    - name: install base packages
+      apt:
+        pkg: "{{ install_packages }}"
+        dpkg_options: force-confold,force-confdef
+        state: latest
+        update_cache: yes
+        cache_valid_time: 604800
