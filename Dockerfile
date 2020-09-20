@@ -4,6 +4,7 @@ RUN apt-get update \
   && apt-get install -y ssh \
       git \
       git ansible \
+      nano \
   && apt-get clean
 
 RUN git clone https://github.com/trungams/bionic-image && cd bionic-image && ansible-playbook -i ./hosts main.yml
