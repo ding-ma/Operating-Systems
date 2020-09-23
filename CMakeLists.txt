@@ -9,7 +9,7 @@ add_library(
         Assignment-1/a1_lib.c
 )
 
-add_executable(client Assignment-1/Client.c)
-add_executable(server Assignment-1/Server.c)
+add_executable(client Sample/example_client.c)
+add_executable(server Sample/example_server.c)
 target_link_libraries(client PRIVATE rpc)
 target_link_libraries(server PRIVATE rpc)
