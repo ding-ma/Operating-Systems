@@ -1,7 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <sys/wait.h>
 #include <arpa/inet.h>
 #include <unistd.h>
 
@@ -110,7 +109,7 @@ int main(int argc, char *argv[]) {
         perror("listen socket bind error\n");
         return EXIT_FAILURE;
     }
-    
+
     while (strcmp(msg, "exit\n")) { //todo check if we want to put it here
         memset(msg, 0, sizeof(msg));
         ssize_t byteCount = recv_message(clientFd, msg, BUFSIZE);
@@ -151,7 +150,7 @@ int main(int argc, char *argv[]) {
             }
         } else if (result == 5) {
             if (isInputLengthValid(msg, 1)) {
-                sprintf(answer, "%lu \n", factorial(msgCopy));
+                sprintf(answer, "%lu", factorial(msgCopy));
             } else {
                 sprintf(answer, "%s", "not valid factorial");
             }
@@ -160,7 +159,7 @@ int main(int argc, char *argv[]) {
         } else {
             sprintf(answer, "%s", "not valid command");
         }
-        
+
         if (byteCount <= 0) {
             break;
         }
