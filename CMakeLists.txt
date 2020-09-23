@@ -12,4 +12,4 @@ add_library(
 add_executable(client Assignment-1/Client.c)
 add_executable(server Assignment-1/Server.c)
 target_link_libraries(client PRIVATE rpc)
-target_link_libraries(client PRIVATE rpc)
+target_link_libraries(server PRIVATE rpc)
