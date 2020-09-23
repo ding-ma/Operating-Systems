@@ -19,6 +19,7 @@ int main(int argc, char *argv[]) {
     }
     
     while (strcmp(user_input, "exit\n")) {
+        fflush(stdin);
         memset(user_input, 0, sizeof(user_input));
         memset(server_msg, 0, sizeof(server_msg));
         

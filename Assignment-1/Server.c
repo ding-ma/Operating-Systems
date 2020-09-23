@@ -17,7 +17,7 @@ int addInts(char *cmd) {
     token = strtok(NULL, " ");
     int y = atoi(token);
     
-    return x+y;
+    return x + y;
 }
 
 int multiplyInts(char *cmd) {
@@ -26,17 +26,17 @@ int multiplyInts(char *cmd) {
     int x = atoi(token);
     token = strtok(NULL, " ");
     int y = atoi(token);
-    return x*y;
+    return x * y;
 }
 
-int isValidDivition(char *cmd){
+int isValidDivition(char *cmd) {
     char *token = strtok(cmd, " ");
     token = strtok(NULL, " ");
     float x = atof(token);
     token = strtok(NULL, " ");
     float y = atof(token);
     
-    return y!=0.0;
+    return y != 0.0;
 }
 
 float divideFloats(char *cmd) {
@@ -48,8 +48,11 @@ float divideFloats(char *cmd) {
     return x / y;
 }
 
-void sleeps(int x) {
-    wait(&x);
+void sleeps(char *cmd) {
+    char *token = strtok(cmd, " ");
+    token = strtok(NULL, " ");
+    int x = atoi(token);
+    sleep(x);
 }
 
 uint64_t factHelper(int cur, uint64_t acc) {
@@ -60,7 +63,10 @@ uint64_t factHelper(int cur, uint64_t acc) {
     }
 }
 
-uint64_t factorial(int x) {
+uint64_t factorial(char *cmd) {
+    char *token = strtok(cmd, " ");
+    token = strtok(NULL, " ");
+    int x = atoi(token);
     return factHelper(x, 1);
 }
 
@@ -95,6 +101,7 @@ int main(int argc, char *argv[]) {
     char msg[BUFSIZE];
     char msgCopy[BUFSIZE];
     char *returnMsg;
+    char answer[BUFSIZE];
     if (create_server("127.0.0.1", atoi(argv[1]), &sockFd) < 0) {
         perror("listen socket create error\n");
         return EXIT_FAILURE;
@@ -107,75 +114,58 @@ int main(int argc, char *argv[]) {
     while (strcmp(msg, "exit\n")) { //todo check if we want to put it here
         memset(msg, 0, sizeof(msg));
         ssize_t byteCount = recv_message(clientFd, msg, BUFSIZE);
-
-//        int pid = fork();
-//
-//        if(pid < 0) {
-//            return EXIT_FAILURE;
-//        } else if( pid ==0){
-//
-//            dup2(clientFd, fileno(stdout));
-//            // execute command
-//            system(msg);
-//            // indicate end of command output
-//            putc(kEndOfTransfer, stdout);
-//            fflush(stdout);
-//            exit(EXIT_SUCCESS);
-//        } else{
-//            wait(NULL);
-//        }
-//todo cast it into a string
+        
+        dup2(clientFd, fileno(stdout));
         strcpy(msgCopy, msg);
         char *token = strtok(msg, " ");
         int result = isCommandValid(token);
         if (result == 1) {
             if (isInputLengthValid(msg, 2)) {
-                returnMsg = "valid ADD";
-                printf("%d \n", addInts(msgCopy));
+                sprintf(answer, "%d", addInts(msgCopy));
             } else {
-                returnMsg = "not valid ADD";
+                sprintf(answer, "%s", "not valid ADD");
             }
         } else if (result == 2) {
             if (isInputLengthValid(msg, 2)) {
-                returnMsg = "valid multiply";
-                printf("%d \n", multiplyInts(msgCopy));
+                sprintf(answer, "%d", multiplyInts(msgCopy));
             } else {
-                returnMsg = "not valid multiply";
+                sprintf(answer, "%s", "not valid multiply");
             }
         } else if (result == 3) {
             if (isInputLengthValid(msg, 2)) {
                 strcpy(msg, msgCopy);
-                if(isValidDivition(msg)){
-                    returnMsg = "gonna do div";
-                    printf("%f \n", divideFloats(msgCopy));
-                } else{
-                    returnMsg = "Cannot divide by 0!";
+                if (isValidDivition(msg)) {
+                    sprintf(answer, "%f", divideFloats(msgCopy));
+                } else {
+                    sprintf(answer, "%s", "Cannot divide by 0!");
                 }
             } else {
-                returnMsg = "not valid divide";
+                sprintf(answer, "%s", "not valid divide");
             }
         } else if (result == 4) {
             if (isInputLengthValid(msg, 1)) {
-                returnMsg = "valid sleep";
+                sleeps(msgCopy);
+                sprintf(answer, "%s", " ");
             } else {
-                returnMsg = "not valid sleep";
+                sprintf(answer, "%s", "not valid sleep");
             }
         } else if (result == 5) {
             if (isInputLengthValid(msg, 1)) {
-                returnMsg = "valid factorial";
+                sprintf(answer, "%lu \n", factorial(msgCopy));
             } else {
-                returnMsg = "not valid factorial";
+                sprintf(answer, "%s", "not valid factorial");
             }
         } else if (result == 6) {
-            returnMsg = "valid exit\n";
+            sprintf(answer, "%s", "exiting...");
         } else {
-            returnMsg = "not valid command";
+            sprintf(answer, "%s", "not valid command");
         }
         
         if (byteCount <= 0) {
             break;
         }
-        send_message(clientFd, returnMsg, strlen(returnMsg));
+        send_message(clientFd, answer, strlen(answer));
+        // indicate end of command output
         fflush(stdout);
     }
     return EXIT_SUCCESS;
