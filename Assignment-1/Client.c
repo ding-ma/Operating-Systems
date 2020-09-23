@@ -7,6 +7,8 @@
 #include <arpa/inet.h>
 #include <netinet/in.h>
 #include <sys/socket.h>
+#include "a1_lib.h"
+
 
 const char kEndOfTransfer = 26;
 
@@ -17,28 +19,39 @@ void sendCommand(int fdSocketClient,char* inputLine, char inputLineLengthRead) {
     // print/forward everything sent from server to console
     char recvChar;
     while (recv(fdSocketClient, &recvChar, 1, 0) > 0) {
-        if (recvChar == kEndOfTransfer) break;
+        if (recvChar == kEndOfTransfer){
+            break;
+        }
         putc(recvChar, stdout);
     }
 }
 
-void isValidCommand(char *cmd, int numb,int fdSocketClient,char* inputLine, char inputLineLengthRead) {
-    int counter = 0;
-    cmd = strtok(NULL, " ");
-    while (cmd != NULL) {
-        printf("TOKEN------- %s\n", cmd); //printing each token
-        cmd = strtok(NULL, " ");
-        counter++;
+//void sendCommandIfValid(char *cmd, int numbArgs, int fdSocketClient, char* inputLine, char inputLineLengthRead) {
+//    int counter = 0;
+//    cmd = strtok(NULL, " ");
+//    while (cmd != NULL) {
+//        printf("TOKEN------- %s\n", cmd); //printing each token
+//        cmd = strtok(NULL, " ");
+//        counter++;
+//    }
+//    if(counter == numbArgs){
+//        sendCommand(fdSocketClient,inputLine, inputLineLengthRead);
+//    } else{
+//        printf("There is an error in your command \n");
+//    }
+//}
+
+
+int isCommandValid(char* cmd){
+    char *commands[] = {"add", "multiply", "divide", "sleep","factorial"};
+    int len = sizeof(commands) / sizeof(commands[0]);
+    for (int i = 0; i < len; ++i) {
+        if (strcmp(commands[i], cmd) == 0) {
+            return 1;
+        }
     }
-    printf("%d \n", counter == numb);
-    if(counter == numb){
-        sendCommand(fdSocketClient,inputLine, inputLineLengthRead);
-    } else{
-        printf("There is an error in your command \n");
-    }
+    return 0;
 }
-
-
 int main(int argc, char *argv[]) {
     if (argc != 3) {
         return EXIT_FAILURE;
@@ -71,23 +84,17 @@ int main(int argc, char *argv[]) {
         // send command to server
         printf(">> ");
         inputLineLengthRead = getline(&inputLine, &inputLengthAllocated, stdin);
-        printf("%s \n", inputLine);
+        
+        char duplicate[300];
+        strcpy(duplicate,inputLine);
         char *token = strtok(inputLine, " ");
         
-        if (strcmp(token, "add") == 0) { //check if there are 2 numb
-            isValidCommand(token, 2, fdSocketClient,inputLine, inputLineLengthRead);
-        } else if (strcmp(token, "multiply") == 0) { //check if there are 2 numb
-            isValidCommand(token, 2, fdSocketClient,inputLine, inputLineLengthRead);
-        } else if (strcmp(token, "divide") == 0) {
-            isValidCommand(token, 2, fdSocketClient,inputLine, inputLineLengthRead);
-        } else if (strcmp(token, "sleep") == 0) {
-            isValidCommand(token, 1, fdSocketClient,inputLine, inputLineLengthRead);
-        } else if (strcmp(token, "factorial") == 0) {
-            isValidCommand(token, 1, fdSocketClient,inputLine, inputLineLengthRead);
+        if (isCommandValid(token)) { //check if the command is a valid one
+            sendCommand(fdSocketClient, duplicate, inputLineLengthRead);
         } else if (strcmp(token, "exit\n") == 0) {
             break;
         } else {
-            printf("Wrong command");
+            printf("Wrong command \n");
         }
         
         fflush(stdout);

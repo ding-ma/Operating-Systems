@@ -8,10 +8,36 @@
 #include <netinet/in.h>
 #include <sys/socket.h>
 
+#include "a1_lib.h"
+
 const char kEndOfTransfer = 26;
 
 int addInts(int x, int y){
     return x+y;
+}
+
+int multiplyInts(int a, int b){
+    return a*b;
+}
+
+float divideFloats(float a, float b){
+    return a/b;
+}
+
+void sleeps(int x){
+    sleep(x);
+}
+
+uint64_t helper(int cur, uint64_t acc){
+    if (cur <= 1){
+        return acc;
+    } else{
+        return helper(cur-1, acc*cur);
+    }
+}
+
+uint64_t factorial(int x){
+    return helper(x,1);
 }
 
 int main(int argc, char *argv[]) {
@@ -62,6 +88,8 @@ int main(int argc, char *argv[]) {
             // init a child process to run the command
             // Q: you can do system within the current process, so why not?
             // A: i don't want to make my main process dirty
+            
+
             int childInfo = fork();
             if (childInfo < 0) {
                 return EXIT_FAILURE;
