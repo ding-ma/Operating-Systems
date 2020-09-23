@@ -10,16 +10,42 @@
 #define BUFSIZE   1024
 const char kEndOfTransfer = 26;
 
-int addInts(int x, int y) {
-    return x + y;
+int addInts(char *cmd) {
+    char *token = strtok(cmd, " ");
+    token = strtok(NULL, " ");
+    int x = atoi(token);
+    token = strtok(NULL, " ");
+    int y = atoi(token);
+    
+    return x+y;
 }
 
-int multiplyInts(int a, int b) {
-    return a * b;
+int multiplyInts(char *cmd) {
+    char *token = strtok(cmd, " ");
+    token = strtok(NULL, " ");
+    int x = atoi(token);
+    token = strtok(NULL, " ");
+    int y = atoi(token);
+    return x*y;
 }
 
-float divideFloats(float a, float b) {
-    return a / b;
+int isValidDivition(char *cmd){
+    char *token = strtok(cmd, " ");
+    token = strtok(NULL, " ");
+    float x = atof(token);
+    token = strtok(NULL, " ");
+    float y = atof(token);
+    
+    return y!=0.0;
+}
+
+float divideFloats(char *cmd) {
+    char *token = strtok(cmd, " ");
+    token = strtok(NULL, " ");
+    float x = atof(token);
+    token = strtok(NULL, " ");
+    float y = atof(token);
+    return x / y;
 }
 
 void sleeps(int x) {
@@ -67,6 +93,7 @@ int main(int argc, char *argv[]) {
     
     int sockFd, clientFd;
     char msg[BUFSIZE];
+    char msgCopy[BUFSIZE];
     char *returnMsg;
     if (create_server("127.0.0.1", atoi(argv[1]), &sockFd) < 0) {
         perror("listen socket create error\n");
@@ -97,24 +124,33 @@ int main(int argc, char *argv[]) {
 //        } else{
 //            wait(NULL);
 //        }
-        
+//todo cast it into a string
+        strcpy(msgCopy, msg);
         char *token = strtok(msg, " ");
         int result = isCommandValid(token);
         if (result == 1) {
             if (isInputLengthValid(msg, 2)) {
                 returnMsg = "valid ADD";
+                printf("%d \n", addInts(msgCopy));
             } else {
                 returnMsg = "not valid ADD";
             }
         } else if (result == 2) {
             if (isInputLengthValid(msg, 2)) {
                 returnMsg = "valid multiply";
+                printf("%d \n", multiplyInts(msgCopy));
             } else {
                 returnMsg = "not valid multiply";
             }
         } else if (result == 3) {
             if (isInputLengthValid(msg, 2)) {
-                returnMsg = "valid divide";
+                strcpy(msg, msgCopy);
+                if(isValidDivition(msg)){
+                    returnMsg = "gonna do div";
+                    printf("%f \n", divideFloats(msgCopy));
+                } else{
+                    returnMsg = "Cannot divide by 0!";
+                }
             } else {
                 returnMsg = "not valid divide";
             }
@@ -133,7 +169,7 @@ int main(int argc, char *argv[]) {
         } else if (result == 6) {
             returnMsg = "valid exit\n";
         } else {
-            returnMsg = "not valid";
+            returnMsg = "not valid command";
         }
         
         if (byteCount <= 0) {
