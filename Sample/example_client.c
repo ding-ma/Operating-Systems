@@ -16,7 +16,7 @@ int main(void) {
     fprintf(stderr, "oh no\n");
     return -1;
   }
-  while (strcmp(user_input, "quit\n")) {
+  while (true) {
     memset(user_input, 0, sizeof(user_input));
     memset(server_msg, 0, sizeof(server_msg));
 
@@ -25,11 +25,21 @@ int main(void) {
     // send the input to server
     send_message(sockfd, user_input, strlen(user_input));
     // receive a msg from the server
+    
+      if(strcmp(user_input, "e\n") == 0){
+          printf("exit");
+          break;
+      }
+      if (strcmp(user_input, "q\n") == 0){
+          printf("quit");
+          break;
+      }
     ssize_t byte_count = recv_message(sockfd, server_msg, sizeof(server_msg));
     if (byte_count <= 0) {
       break;
     }
     printf("Server: %s\n", server_msg);
+    
   }
 
   return 0;
