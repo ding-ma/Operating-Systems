@@ -19,7 +19,6 @@ int main(void) {
         return -1;
     }
     
-    
     while (1) {
         int socket = accept_connection(sockfd, &clientfd);
         if (socket < 0) {
@@ -42,8 +41,7 @@ int main(void) {
                 }
                 if (strcmp(msg, "q\n") == 0) {
                     printf("quitting");
-                    return 100;
-                    
+                    exit(EXIT_SUCCESS);
                 }
                 printf("Client: %s\n", msg);
                 send_message(clientfd, greeting, strlen(greeting));
@@ -52,15 +50,15 @@ int main(void) {
             close(socket);
             int status;
     
-            while (1){
-                waitpid(pid, &status, WNOHANG);
-                if ( WIFEXITED(status) ){
-                    int exit_status = WEXITSTATUS(status);
-                    printf("Exit status of the child was %d\n",
-                           exit_status);
-                    break;
-                }
-            }
+//            while (1){
+//                waitpid(pid, &status, WNOHANG);
+//                if ( WIFEXITED(status) ){
+//                    int exit_status = WEXITSTATUS(status);
+//                    printf("Exit status of the child was %d\n",
+//                           exit_status);
+//                    break;
+//                }
+//            }
         }
     
        

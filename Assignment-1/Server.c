@@ -71,7 +71,7 @@ uint64_t factorial(char *cmd) {
 
 
 int isCommandValid(char *cmd) {
-    char *commands[] = {"add", "multiply", "divide", "sleep", "factorial", "exit\n"};
+    char *commands[] = {"add", "multiply", "divide", "sleep", "factorial", "exit\n", "quit\n"};
     int len = sizeof(commands) / sizeof(commands[0]);
     for (int i = 0; i < len; ++i) {
         if (strcmp(commands[i], cmd) == 0) {
@@ -99,73 +99,86 @@ int main(int argc, char *argv[]) {
     int sockFd, clientFd;
     char msg[BUFSIZE];
     char msgCopy[BUFSIZE];
-    char *returnMsg;
     char answer[BUFSIZE];
     if (create_server("127.0.0.1", atoi(argv[1]), &sockFd) < 0) {
         perror("listen socket create error\n");
         return EXIT_FAILURE;
     }
-    if (accept_connection(sockFd, &clientFd) < 0) {
-        perror("listen socket bind error\n");
-        return EXIT_FAILURE;
-    }
-
-    while (strcmp(msg, "exit\n")) { //todo check if we want to put it here
-        memset(msg, 0, sizeof(msg));
-        ssize_t byteCount = recv_message(clientFd, msg, BUFSIZE);
-        
-        dup2(clientFd, fileno(stdout));
-        strcpy(msgCopy, msg);
-        char *token = strtok(msg, " ");
-        int result = isCommandValid(token);
-        if (result == 1) {
-            if (isInputLengthValid(msg, 2)) {
-                sprintf(answer, "%d", addInts(msgCopy));
-            } else {
-                sprintf(answer, "%s", "not valid ADD");
-            }
-        } else if (result == 2) {
-            if (isInputLengthValid(msg, 2)) {
-                sprintf(answer, "%d", multiplyInts(msgCopy));
-            } else {
-                sprintf(answer, "%s", "not valid multiply");
-            }
-        } else if (result == 3) {
-            if (isInputLengthValid(msg, 2)) {
-                strcpy(msg, msgCopy);
-                if (isValidDivition(msg)) {
-                    sprintf(answer, "%f", divideFloats(msgCopy));
-                } else {
-                    sprintf(answer, "%s", "Cannot divide by 0!");
+    
+    while (1) { //todo check if we want to put it here
+        int socket = accept_connection(sockFd, &clientFd);
+        if (socket < 0) {
+            perror("listen socket bind error\n");
+            return EXIT_FAILURE;
+        }
+        int pid = fork();
+        if(pid ==0){
+            close(sockFd);
+            while (1){
+                memset(msg, 0, sizeof(msg));
+                ssize_t byteCount = recv_message(clientFd, msg, BUFSIZE);
+    
+                dup2(clientFd, fileno(stdout));
+                strcpy(msgCopy, msg);
+                char *token = strtok(msg, " ");
+                int result = isCommandValid(token);
+                if (result == 1) {
+                    if (isInputLengthValid(msg, 2)) {
+                        sprintf(answer, "%d", addInts(msgCopy));
+                    } else {
+                        sprintf(answer, "%s", "not valid ADD");
+                    }
+                } else if (result == 2) {
+                    if (isInputLengthValid(msg, 2)) {
+                        sprintf(answer, "%d", multiplyInts(msgCopy));
+                    } else {
+                        sprintf(answer, "%s", "not valid multiply");
+                    }
+                } else if (result == 3) {
+                    if (isInputLengthValid(msg, 2)) {
+                        strcpy(msg, msgCopy);
+                        if (isValidDivition(msg)) {
+                            sprintf(answer, "%f", divideFloats(msgCopy));
+                        } else {
+                            sprintf(answer, "%s", "Cannot divide by 0!");
+                        }
+                    } else {
+                        sprintf(answer, "%s", "not valid divide");
+                    }
+                } else if (result == 4) {
+                    if (isInputLengthValid(msg, 1)) {
+                        sleeps(msgCopy);
+                        sprintf(answer, "%s", " ");
+                    } else {
+                        sprintf(answer, "%s", "not valid sleep");
+                    }
+                } else if (result == 5) {
+                    if (isInputLengthValid(msg, 1)) {
+                        sprintf(answer, "%lu", factorial(msgCopy));
+                    } else {
+                        sprintf(answer, "%s", "not valid factorial");
+                    }
+                } else if (result == 6) {
+                    sprintf(answer, "%s", "exiting...");
+                    return 0;
+                } else if(result == 7){
+                    sprintf(answer, "quitting");
+                    exit(0);
+                }else {
+                    sprintf(answer, "%s", "not valid command");
                 }
-            } else {
-                sprintf(answer, "%s", "not valid divide");
+    
+                if (byteCount <= 0) {
+                    break;
+                }
+                send_message(clientFd, answer, strlen(answer));
+                // indicate end of command output
+                fflush(stdout);
             }
-        } else if (result == 4) {
-            if (isInputLengthValid(msg, 1)) {
-                sleeps(msgCopy);
-                sprintf(answer, "%s", " ");
-            } else {
-                sprintf(answer, "%s", "not valid sleep");
-            }
-        } else if (result == 5) {
-            if (isInputLengthValid(msg, 1)) {
-                sprintf(answer, "%lu", factorial(msgCopy));
-            } else {
-                sprintf(answer, "%s", "not valid factorial");
-            }
-        } else if (result == 6) {
-            sprintf(answer, "%s", "exiting...");
-        } else {
-            sprintf(answer, "%s", "not valid command");
+        } else{
+            close(socket);
         }
-
-        if (byteCount <= 0) {
-            break;
-        }
-        send_message(clientFd, answer, strlen(answer));
-        // indicate end of command output
-        fflush(stdout);
+       
     }
     return EXIT_SUCCESS;
 }
