@@ -3,6 +3,7 @@
 #include <string.h>
 #include <arpa/inet.h>
 #include "a1_lib.h"
+#include <unistd.h>
 
 #define BUFSIZE   1024
 
@@ -32,7 +33,7 @@ int main(int argc, char *argv[]) {
         if(strcmp(user_input, "exit\n")==0){
             break;
         }
-        if(strcmp(user_input, "quit\n")==0){
+        if(strcmp(user_input, "shutdown\n")==0){
             break;
         }
         
@@ -40,8 +41,8 @@ int main(int argc, char *argv[]) {
         if (byteCount <= 0) {
             break;
         }
-        printf("Server: %s\n", server_msg);
+        printf("%s\n", server_msg);
     }
-    
+    close(sockfd);
     return EXIT_SUCCESS;
 }

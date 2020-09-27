@@ -71,7 +71,7 @@ uint64_t factorial(char *cmd) {
 
 
 int isCommandValid(char *cmd) {
-    char *commands[] = {"add", "multiply", "divide", "sleep", "factorial", "exit\n", "quit\n"};
+    char *commands[] = {"add", "multiply", "divide", "sleep", "factorial", "exit\n", "shutdown\n"};
     int len = sizeof(commands) / sizeof(commands[0]);
     for (int i = 0; i < len; ++i) {
         if (strcmp(commands[i], cmd) == 0) {
@@ -129,13 +129,13 @@ int main(int argc, char *argv[]) {
                     if (isInputLengthValid(msg, 2)) {
                         sprintf(answer, "%d", addInts(msgCopy));
                     } else {
-                        sprintf(answer, "not valid ADD");
+                        sprintf(answer, "NOT_FOUND");
                     }
                 } else if (result == 2) {
                     if (isInputLengthValid(msg, 2)) {
                         sprintf(answer, "%d", multiplyInts(msgCopy));
                     } else {
-                        sprintf(answer, "not valid multiply");
+                        sprintf(answer, "NOT_FOUND");
                     }
                 } else if (result == 3) {
                     if (isInputLengthValid(msg, 2)) {
@@ -143,34 +143,34 @@ int main(int argc, char *argv[]) {
                         if (isValidDivition(msg)) {
                             sprintf(answer, "%f", divideFloats(msgCopy));
                         } else {
-                            sprintf(answer, "Cannot divide by 0!");
+                            sprintf(answer, "Cannot divide by 0.");
                         }
                     } else {
-                        sprintf(answer, "not valid divide");
+                        sprintf(answer, "NOT_FOUND");
                     }
                 } else if (result == 4) {
                     if (isInputLengthValid(msg, 1)) {
                         sleeps(msgCopy);
                         sprintf(answer,  " ");
                     } else {
-                        sprintf(answer, "not valid sleep");
+                        sprintf(answer, "NOT_FOUND");
                     }
                 } else if (result == 5) {
                     if (isInputLengthValid(msg, 1)) {
                         sprintf(answer, "%lu", factorial(msgCopy));
                     } else {
-                        sprintf(answer, "not valid factorial");
+                        sprintf(answer, "NOT_FOUND");
                     }
                 } else if (result == 6) {
-                    sprintf(answer, "exiting...");
+                    sprintf(answer, " ");
                     close(socket);
                     return EXIT_SUCCESS;
                 } else if(result == 7){
-                    sprintf(answer, "quitting");
+                    sprintf(answer, " ");
                     fprintf(stderr, "here %d %d\n", getpid(), getppid());
                     kill(getppid(),SIGTERM);
                 }else {
-                    sprintf(answer, "not valid command");
+                    sprintf(answer, "NOT_FOUND");
                 }
     
                 if (byteCount <= 0) {
