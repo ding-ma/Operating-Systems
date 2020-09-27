@@ -3,7 +3,7 @@
 #include <string.h>
 #include <arpa/inet.h>
 #include <unistd.h>
-
+#include <signal.h>
 #include "a1_lib.h"
 
 #define BUFSIZE   1024
@@ -104,6 +104,7 @@ int main(int argc, char *argv[]) {
         perror("listen socket create error\n");
         return EXIT_FAILURE;
     }
+//    freopen("/dev/null", "w", stderr);
     
     while (1) { //todo check if we want to put it here
         int socket = accept_connection(sockFd, &clientFd);
@@ -122,17 +123,19 @@ int main(int argc, char *argv[]) {
                 strcpy(msgCopy, msg);
                 char *token = strtok(msg, " ");
                 int result = isCommandValid(token);
+                fprintf(stderr, "s:%s   d:%d \n", msg, result);
+    
                 if (result == 1) {
                     if (isInputLengthValid(msg, 2)) {
                         sprintf(answer, "%d", addInts(msgCopy));
                     } else {
-                        sprintf(answer, "%s", "not valid ADD");
+                        sprintf(answer, "not valid ADD");
                     }
                 } else if (result == 2) {
                     if (isInputLengthValid(msg, 2)) {
                         sprintf(answer, "%d", multiplyInts(msgCopy));
                     } else {
-                        sprintf(answer, "%s", "not valid multiply");
+                        sprintf(answer, "not valid multiply");
                     }
                 } else if (result == 3) {
                     if (isInputLengthValid(msg, 2)) {
@@ -140,32 +143,34 @@ int main(int argc, char *argv[]) {
                         if (isValidDivition(msg)) {
                             sprintf(answer, "%f", divideFloats(msgCopy));
                         } else {
-                            sprintf(answer, "%s", "Cannot divide by 0!");
+                            sprintf(answer, "Cannot divide by 0!");
                         }
                     } else {
-                        sprintf(answer, "%s", "not valid divide");
+                        sprintf(answer, "not valid divide");
                     }
                 } else if (result == 4) {
                     if (isInputLengthValid(msg, 1)) {
                         sleeps(msgCopy);
-                        sprintf(answer, "%s", " ");
+                        sprintf(answer,  " ");
                     } else {
-                        sprintf(answer, "%s", "not valid sleep");
+                        sprintf(answer, "not valid sleep");
                     }
                 } else if (result == 5) {
                     if (isInputLengthValid(msg, 1)) {
                         sprintf(answer, "%lu", factorial(msgCopy));
                     } else {
-                        sprintf(answer, "%s", "not valid factorial");
+                        sprintf(answer, "not valid factorial");
                     }
                 } else if (result == 6) {
-                    sprintf(answer, "%s", "exiting...");
-                    return 0;
+                    sprintf(answer, "exiting...");
+                    close(socket);
+                    return EXIT_SUCCESS;
                 } else if(result == 7){
                     sprintf(answer, "quitting");
-                    exit(0);
+                    fprintf(stderr, "here %d %d\n", getpid(), getppid());
+                    kill(getppid(),SIGTERM);
                 }else {
-                    sprintf(answer, "%s", "not valid command");
+                    sprintf(answer, "not valid command");
                 }
     
                 if (byteCount <= 0) {
@@ -178,7 +183,5 @@ int main(int argc, char *argv[]) {
         } else{
             close(socket);
         }
-       
     }
-    return EXIT_SUCCESS;
 }

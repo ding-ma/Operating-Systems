@@ -18,7 +18,7 @@ int main(int argc, char *argv[]) {
         return EXIT_FAILURE;
     }
     
-    while (strcmp(user_input, "exit\n")) {
+    while (1) {
         fflush(stdin);
         memset(user_input, 0, sizeof(user_input));
         memset(server_msg, 0, sizeof(server_msg));
@@ -29,6 +29,13 @@ int main(int argc, char *argv[]) {
         
         //receive a msg from the server. we will send everything to the server and it will process it
         send_message(sockfd, user_input, strlen(user_input));
+        if(strcmp(user_input, "exit\n")==0){
+            break;
+        }
+        if(strcmp(user_input, "quit\n")==0){
+            break;
+        }
+        
         ssize_t byteCount = recv_message(sockfd, server_msg, sizeof(server_msg));
         if (byteCount <= 0) {
             break;
