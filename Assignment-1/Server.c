@@ -7,7 +7,7 @@
 #include "a1_lib.h"
 
 #define BUFSIZE   1024
-const char kEndOfTransfer = 26;
+
 
 int addInts(char *cmd) {
     char *token = strtok(cmd, " ");
@@ -25,6 +25,7 @@ int multiplyInts(char *cmd) {
     int x = atoi(token);
     token = strtok(NULL, " ");
     int y = atoi(token);
+    
     return x * y;
 }
 
@@ -44,6 +45,7 @@ float divideFloats(char *cmd) {
     float x = atof(token);
     token = strtok(NULL, " ");
     float y = atof(token);
+    
     return x / y;
 }
 
@@ -51,6 +53,7 @@ void sleeps(char *cmd) {
     char *token = strtok(cmd, " ");
     token = strtok(NULL, " ");
     int x = atoi(token);
+    
     sleep(x);
 }
 
@@ -92,7 +95,7 @@ int isInputLengthValid(char *cmd, int expectedLength) {
 }
 
 int main(int argc, char *argv[]) {
-    if (argc != 2) {
+    if (argc != 3) {
         return EXIT_FAILURE;
     }
     
@@ -100,11 +103,12 @@ int main(int argc, char *argv[]) {
     char msg[BUFSIZE];
     char msgCopy[BUFSIZE];
     char answer[BUFSIZE];
-    if (create_server("127.0.0.1", atoi(argv[1]), &sockFd) < 0) {
+    if (create_server(argv[1], atoi(argv[2]), &sockFd) < 0) {
         perror("listen socket create error\n");
         return EXIT_FAILURE;
     }
-//    freopen("/dev/null", "w", stderr);
+//    freopen("/dev/null", "w", stderr); //surpress debug mode
+    fprintf(stderr, "Server listening on %s:%s", argv[1], argv[2]);
     
     while (1) { //todo check if we want to put it here
         int socket = accept_connection(sockFd, &clientFd);
@@ -129,13 +133,13 @@ int main(int argc, char *argv[]) {
                     if (isInputLengthValid(msg, 2)) {
                         sprintf(answer, "%d", addInts(msgCopy));
                     } else {
-                        sprintf(answer, "NOT_FOUND");
+                        sprintf(answer, "COMMAND NOT FOUND");
                     }
                 } else if (result == 2) {
                     if (isInputLengthValid(msg, 2)) {
                         sprintf(answer, "%d", multiplyInts(msgCopy));
                     } else {
-                        sprintf(answer, "NOT_FOUND");
+                        sprintf(answer, "COMMAND NOT FOUND");
                     }
                 } else if (result == 3) {
                     if (isInputLengthValid(msg, 2)) {
@@ -143,23 +147,23 @@ int main(int argc, char *argv[]) {
                         if (isValidDivition(msg)) {
                             sprintf(answer, "%f", divideFloats(msgCopy));
                         } else {
-                            sprintf(answer, "Cannot divide by 0.");
+                            sprintf(answer, "Error: Division by zero");
                         }
                     } else {
-                        sprintf(answer, "NOT_FOUND");
+                        sprintf(answer, "COMMAND NOT FOUND");
                     }
                 } else if (result == 4) {
                     if (isInputLengthValid(msg, 1)) {
                         sleeps(msgCopy);
                         sprintf(answer,  " ");
                     } else {
-                        sprintf(answer, "NOT_FOUND");
+                        sprintf(answer, "COMMAND NOT FOUND");
                     }
                 } else if (result == 5) {
                     if (isInputLengthValid(msg, 1)) {
                         sprintf(answer, "%lu", factorial(msgCopy));
                     } else {
-                        sprintf(answer, "NOT_FOUND");
+                        sprintf(answer, "COMMAND NOT FOUND");
                     }
                 } else if (result == 6) {
                     sprintf(answer, " ");
@@ -170,7 +174,7 @@ int main(int argc, char *argv[]) {
                     fprintf(stderr, "here %d %d\n", getpid(), getppid());
                     kill(getppid(),SIGTERM);
                 }else {
-                    sprintf(answer, "NOT_FOUND");
+                    sprintf(answer, "Error: Command \"%s\" not found", token);
                 }
     
                 if (byteCount <= 0) {

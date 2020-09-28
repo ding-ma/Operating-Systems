@@ -34,6 +34,7 @@ int main(int argc, char *argv[]) {
             break;
         }
         if(strcmp(user_input, "shutdown\n")==0){
+            printf("Bye!\n");
             break;
         }
         
