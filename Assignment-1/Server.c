@@ -174,7 +174,7 @@ int main(int argc, char *argv[]) {
                 } else if (result == 7) {
                     sprintf(answer, " ");
                     fprintf(stderr, "here %d %d\n", getpid(), getppid());
-                    kill(getppid(), SIGTERM);
+                    kill(0, SIGTERM); //we want to kill all the current processes so we use 0
                 } else {
                     sprintf(answer, "Error: Command \"%s\" not found", token);
                 }
