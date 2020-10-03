@@ -111,7 +111,7 @@ int main(int argc, char *argv[]) {
 //    freopen("/dev/null", "w", stderr); //surpress debug mode
     fprintf(stderr, "Server listening on %s:%s", argv[1], argv[2]);
     
-    while (1) { //todo check if we want to put it here
+    while (1) {
         int socket = accept_connection(sockFd, &clientFd);
         if (socket < 0) {
             perror("listen socket bind error\n");
@@ -187,6 +187,7 @@ int main(int argc, char *argv[]) {
                 fflush(stdout);
             }
         } else {
+            //close the socket for the parent as we dont need it
             close(socket);
         }
     }

@@ -20,7 +20,8 @@
 #define BACKLOG_SIZE    10
 
 /**
- * message interface for struct passing
+ * Message struct and used to struct passing between frontend and client
+ * This was a requirement from the TA apparently
  */
 typedef struct message{
     char input[1000];
