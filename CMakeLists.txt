@@ -9,6 +9,8 @@ add_library(
         Assignment-1/a1_lib.c
 )
 
+
+
 add_executable(frontend Assignment-1/Client.c)
 add_executable(backend Assignment-1/Server.c)
 target_link_libraries(frontend PRIVATE a1_lib)

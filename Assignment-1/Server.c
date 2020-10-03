@@ -103,6 +103,7 @@ int main(int argc, char *argv[]) {
     char msg[BUFSIZE];
     char msgCopy[BUFSIZE];
     char answer[BUFSIZE];
+    message  *sentMsg;
     if (create_server(argv[1], atoi(argv[2]), &sockFd) < 0) {
         perror("listen socket create error\n");
         return EXIT_FAILURE;
@@ -117,34 +118,35 @@ int main(int argc, char *argv[]) {
             return EXIT_FAILURE;
         }
         int pid = fork();
-        if(pid ==0){
+        if (pid == 0) {
             close(sockFd);
-            while (1){
+            while (1) {
                 memset(msg, 0, sizeof(msg));
                 ssize_t byteCount = recv_message(clientFd, msg, BUFSIZE);
-    
+                sentMsg = (message *)msg;
+                
                 dup2(clientFd, fileno(stdout));
-                strcpy(msgCopy, msg);
-                char *token = strtok(msg, " ");
+                strcpy(msgCopy, sentMsg->input);
+                char *token = strtok(sentMsg->input, " ");
                 int result = isCommandValid(token);
-                fprintf(stderr, "s:%s   d:%d \n", msg, result);
-    
+                fprintf(stderr, "s:%s   d:%d \n", sentMsg->input, result);
+                
                 if (result == 1) {
-                    if (isInputLengthValid(msg, 2)) {
+                    if (isInputLengthValid(sentMsg->input, 2)) {
                         sprintf(answer, "%d", addInts(msgCopy));
                     } else {
                         sprintf(answer, "COMMAND NOT FOUND");
                     }
                 } else if (result == 2) {
-                    if (isInputLengthValid(msg, 2)) {
+                    if (isInputLengthValid(sentMsg->input, 2)) {
                         sprintf(answer, "%d", multiplyInts(msgCopy));
                     } else {
                         sprintf(answer, "COMMAND NOT FOUND");
                     }
                 } else if (result == 3) {
-                    if (isInputLengthValid(msg, 2)) {
+                    if (isInputLengthValid(sentMsg->input, 2)) {
                         strcpy(msg, msgCopy);
-                        if (isValidDivition(msg)) {
+                        if (isValidDivition(sentMsg->input)) {
                             sprintf(answer, "%f", divideFloats(msgCopy));
                         } else {
                             sprintf(answer, "Error: Division by zero");
@@ -153,14 +155,14 @@ int main(int argc, char *argv[]) {
                         sprintf(answer, "COMMAND NOT FOUND");
                     }
                 } else if (result == 4) {
-                    if (isInputLengthValid(msg, 1)) {
+                    if (isInputLengthValid(sentMsg->input, 1)) {
                         sleeps(msgCopy);
-                        sprintf(answer,  " ");
+                        sprintf(answer, " ");
                     } else {
                         sprintf(answer, "COMMAND NOT FOUND");
                     }
                 } else if (result == 5) {
-                    if (isInputLengthValid(msg, 1)) {
+                    if (isInputLengthValid(sentMsg->input, 1)) {
                         sprintf(answer, "%lu", factorial(msgCopy));
                     } else {
                         sprintf(answer, "COMMAND NOT FOUND");
@@ -169,14 +171,14 @@ int main(int argc, char *argv[]) {
                     sprintf(answer, " ");
                     close(socket);
                     return EXIT_SUCCESS;
-                } else if(result == 7){
+                } else if (result == 7) {
                     sprintf(answer, " ");
                     fprintf(stderr, "here %d %d\n", getpid(), getppid());
-                    kill(getppid(),SIGTERM);
-                }else {
+                    kill(getppid(), SIGTERM);
+                } else {
                     sprintf(answer, "Error: Command \"%s\" not found", token);
                 }
-    
+                
                 if (byteCount <= 0) {
                     break;
                 }
@@ -184,7 +186,7 @@ int main(int argc, char *argv[]) {
                 // indicate end of command output
                 fflush(stdout);
             }
-        } else{
+        } else {
             close(socket);
         }
     }

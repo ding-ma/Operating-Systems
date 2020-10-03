@@ -13,8 +13,9 @@ int main(void) {
     int sockfd, clientfd;
     char msg[BUFSIZE];
     const char *greeting = "hello, world\n";
+    message *m;
     
-    if (create_server("127.0.0.1", 10000, &sockfd) < 0) {
+    if (create_server("127.0.0.1", 6535, &sockfd) < 0) {
         fprintf(stderr, "oh no server\n");
         return -1;
     }
@@ -32,6 +33,9 @@ int main(void) {
             while (1) {
                 memset(msg, 0, sizeof(msg));
                 ssize_t byte_count = recv_message(clientfd, msg, BUFSIZE);
+                
+                m = (message *) msg;
+                printf("%s", m->input);
                 if (byte_count <= 0) {
                     break;
                 }

@@ -20,6 +20,13 @@
 #define BACKLOG_SIZE    10
 
 /**
+ * message interface for struct passing
+ */
+typedef struct message{
+    char input[1000];
+}message;
+
+/**
  *  Set up a server socket.
  *
  *  @params:

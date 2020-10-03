@@ -8,6 +8,7 @@
 #define BUFSIZE   1024
 
 int main(int argc, char *argv[]) {
+    message  msg;
     if (argc != 3) {
         return EXIT_FAILURE;
     }
@@ -20,6 +21,7 @@ int main(int argc, char *argv[]) {
     }
     
     while (1) {
+        memset(msg.input, 0, sizeof(msg.input));
         fflush(stdin);
         memset(user_input, 0, sizeof(user_input));
         memset(server_msg, 0, sizeof(server_msg));
@@ -27,9 +29,9 @@ int main(int argc, char *argv[]) {
         // read user input from command line
         printf(">> ");
         fgets(user_input, BUFSIZE, stdin);
-        
+        strcpy(msg.input, user_input);
         //receive a msg from the server. we will send everything to the server and it will process it
-        send_message(sockfd, user_input, strlen(user_input));
+        send_message(sockfd, (char *)&msg.input, sizeof(msg));
         if(strcmp(user_input, "exit\n")==0){
             break;
         }

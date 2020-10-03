@@ -19,6 +19,10 @@
 
 #define BACKLOG_SIZE    10
 
+typedef struct message{
+    char input[1000];
+}message;
+
 /**
  *  Set up a server socket.
  *
