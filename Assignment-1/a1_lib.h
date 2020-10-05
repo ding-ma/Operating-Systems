@@ -21,10 +21,10 @@
 
 /**
  * Message struct and used to struct passing between frontend and client
- * This was a requirement from the TA apparently
  */
-typedef struct message{
-    char input[1000];
+typedef struct message {
+    char function[100];
+    char arguments[1000];
 }message;
 
 /**

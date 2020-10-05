@@ -6,12 +6,11 @@
 #include <signal.h>
 #include "a1_lib.h"
 
-#define BUFSIZE   1024
+#define BUFSIZE   2024
 
 
 int addInts(char *cmd) {
     char *token = strtok(cmd, " ");
-    token = strtok(NULL, " ");
     int x = atoi(token);
     token = strtok(NULL, " ");
     int y = atoi(token);
@@ -21,7 +20,6 @@ int addInts(char *cmd) {
 
 int multiplyInts(char *cmd) {
     char *token = strtok(cmd, " ");
-    token = strtok(NULL, " ");
     int x = atoi(token);
     token = strtok(NULL, " ");
     int y = atoi(token);
@@ -30,8 +28,8 @@ int multiplyInts(char *cmd) {
 }
 
 int isValidDivition(char *cmd) {
+    fprintf(stderr, "in valid div %s\n", cmd);
     char *token = strtok(cmd, " ");
-    token = strtok(NULL, " ");
     float x = atof(token);
     token = strtok(NULL, " ");
     float y = atof(token);
@@ -41,7 +39,6 @@ int isValidDivition(char *cmd) {
 
 float divideFloats(char *cmd) {
     char *token = strtok(cmd, " ");
-    token = strtok(NULL, " ");
     float x = atof(token);
     token = strtok(NULL, " ");
     float y = atof(token);
@@ -50,10 +47,7 @@ float divideFloats(char *cmd) {
 }
 
 void sleeps(char *cmd) {
-    char *token = strtok(cmd, " ");
-    token = strtok(NULL, " ");
-    int x = atoi(token);
-    
+    int x = atoi(cmd);
     sleep(x);
 }
 
@@ -66,9 +60,7 @@ uint64_t factHelper(int cur, uint64_t acc) {
 }
 
 uint64_t factorial(char *cmd) {
-    char *token = strtok(cmd, " ");
-    token = strtok(NULL, " ");
-    int x = atoi(token);
+    int x = atoi(cmd);
     return factHelper(x, 1);
 }
 
@@ -85,12 +77,14 @@ int isCommandValid(char *cmd) {
 }
 
 int isInputLengthValid(char *cmd, int expectedLength) {
-    cmd = strtok(NULL, " ");
+    fprintf(stderr, "command in %s", cmd);
+    char *token = strtok(cmd, " ");
     int curr = 0;
-    while (cmd != NULL) {
-        cmd = strtok(NULL, " ");
+    while (token != NULL) {
+        token = strtok(NULL, " ");
         curr++;
     }
+    fprintf(stderr, "numb command %d", curr);
     return curr == expectedLength;
 }
 
@@ -103,13 +97,13 @@ int main(int argc, char *argv[]) {
     char msg[BUFSIZE];
     char msgCopy[BUFSIZE];
     char answer[BUFSIZE];
-    message  *sentMsg;
+    message *sentMsg;
     if (create_server(argv[1], atoi(argv[2]), &sockFd) < 0) {
         perror("listen socket create error\n");
         return EXIT_FAILURE;
     }
 //    freopen("/dev/null", "w", stderr); //surpress debug mode
-    fprintf(stderr, "Server listening on %s:%s", argv[1], argv[2]);
+    fprintf(stderr, "Server listening on %s:%s \n", argv[1], argv[2]);
     
     while (1) {
         int socket = accept_connection(sockFd, &clientFd);
@@ -123,49 +117,51 @@ int main(int argc, char *argv[]) {
             while (1) {
                 memset(msg, 0, sizeof(msg));
                 ssize_t byteCount = recv_message(clientFd, msg, BUFSIZE);
-                sentMsg = (message *)msg;
-                
+                sentMsg = (message *) msg;
+    
                 dup2(clientFd, fileno(stdout));
-                strcpy(msgCopy, sentMsg->input);
-                char *token = strtok(sentMsg->input, " ");
-                int result = isCommandValid(token);
-                fprintf(stderr, "s:%s   d:%d \n", sentMsg->input, result);
-                
+    
+                fprintf(stderr, "msg received: func %s ,args %s \n", sentMsg->function, sentMsg->arguments);
+    
+                strcpy(msgCopy, sentMsg->arguments);
+                int result = isCommandValid(sentMsg->function);
+                fprintf(stderr, "s:%s   d:%d \n", sentMsg->arguments, result);
+    
                 if (result == 1) {
-                    if (isInputLengthValid(sentMsg->input, 2)) {
+                    if (isInputLengthValid(sentMsg->arguments, 3)) {
                         sprintf(answer, "%d", addInts(msgCopy));
                     } else {
-                        sprintf(answer, "COMMAND NOT FOUND");
+                        sprintf(answer, "add needs 2 numbers");
                     }
                 } else if (result == 2) {
-                    if (isInputLengthValid(sentMsg->input, 2)) {
+                    if (isInputLengthValid(sentMsg->arguments, 3)) {
                         sprintf(answer, "%d", multiplyInts(msgCopy));
                     } else {
-                        sprintf(answer, "COMMAND NOT FOUND");
+                        sprintf(answer, "multiple needs 2 numbers");
                     }
                 } else if (result == 3) {
-                    if (isInputLengthValid(sentMsg->input, 2)) {
+                    if (isInputLengthValid(sentMsg->arguments, 3)) {
                         strcpy(msg, msgCopy);
-                        if (isValidDivition(sentMsg->input)) {
-                            sprintf(answer, "%f", divideFloats(msgCopy));
+                        if (isValidDivition(msgCopy)) {
+                            sprintf(answer, "%f", divideFloats(msg));
                         } else {
                             sprintf(answer, "Error: Division by zero");
                         }
                     } else {
-                        sprintf(answer, "COMMAND NOT FOUND");
+                        sprintf(answer, "divide needs 2 numbers");
                     }
                 } else if (result == 4) {
-                    if (isInputLengthValid(sentMsg->input, 1)) {
+                    if (isInputLengthValid(sentMsg->arguments, 2)) {
                         sleeps(msgCopy);
                         sprintf(answer, " ");
                     } else {
-                        sprintf(answer, "COMMAND NOT FOUND");
+                        sprintf(answer, "sleep needs 1 number");
                     }
                 } else if (result == 5) {
-                    if (isInputLengthValid(sentMsg->input, 1)) {
+                    if (isInputLengthValid(sentMsg->arguments, 2)) {
                         sprintf(answer, "%lu", factorial(msgCopy));
                     } else {
-                        sprintf(answer, "COMMAND NOT FOUND");
+                        sprintf(answer, "factorial needs 1 number");
                     }
                 } else if (result == 6) {
                     sprintf(answer, " ");
@@ -176,7 +172,7 @@ int main(int argc, char *argv[]) {
                     fprintf(stderr, "here %d %d\n", getpid(), getppid());
                     kill(0, SIGTERM); //we want to kill all the current processes so we use 0
                 } else {
-                    sprintf(answer, "Error: Command \"%s\" not found", token);
+                    sprintf(answer, "Error: Command \"%s\" not found", sentMsg->function);
                 }
                 
                 if (byteCount <= 0) {
@@ -191,4 +187,5 @@ int main(int argc, char *argv[]) {
             close(socket);
         }
     }
+    
 }
