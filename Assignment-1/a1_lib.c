@@ -54,7 +54,6 @@ int create_server(const char *host, uint16_t port, int *sockfd) {
 int accept_connection(int sockfd, int *clientfd) {
   struct sockaddr_in connection_address = { 0 };
   socklen_t addrlen = sizeof(connection_address);
-
   // wait for a new connection on the server socket and accept it
   *clientfd = accept(sockfd, (struct sockaddr *)&connection_address, &addrlen);
   if (*clientfd < 0) {

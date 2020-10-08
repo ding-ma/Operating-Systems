@@ -114,13 +114,13 @@ int main(int argc, char *argv[]) {
     processes[0] = 1; //we dont shutdown
     int processCounter = 1; //first one is reserved for shutdown signal
     
-    int sockFd, clientFd;
+    int socketFd, clientFd;
     char msg[BUFSIZE];
     char msgCopy[BUFSIZE];
     char answer[BUFSIZE];
-    int server = create_server(argv[1], atoi(argv[2]), &sockFd);
     message *sentMsg;
-    if (server < 0) {
+    
+    if (create_server(argv[1], atoi(argv[2]), &socketFd) < 0) {
         perror("listen socket create error\n");
         return EXIT_FAILURE;
     }
@@ -129,21 +129,20 @@ int main(int argc, char *argv[]) {
     
     int processChecker = fork(); //have a process to pool the shared memory in order to check if all programs are done when calling shutdown
     if (processChecker == 0) {
-        int canShutdown = 0;
+        int cycle = 0;
         while (1) {
             if (processes[0] == 0) {
-                close(server);
+                close(socketFd);
                 fprintf(stderr, "prearing shutdown, waiting on process to finish \n");
                 if (isEqual(processes)) {
-                    canShutdown = 1;
-                }
-                if (canShutdown) {
                     kill(0, SIGTERM);
                     free(processes);
                     break;
                 }
+    
             }
             
+            fprintf(stderr, "%d - ", cycle++);
             for (int i = 0; i < NUMBER_CLIENT; ++i) {
                 fprintf(stderr, "c%d, s%d | ", i, processes[i]);
             }
@@ -153,15 +152,16 @@ int main(int argc, char *argv[]) {
     } else {
         //this is where we accept client calls
         while (1) {
-            int socket = accept_connection(sockFd, &clientFd);
+            int socket = accept_connection(socketFd, &clientFd);
+            fprintf(stderr, "client accepted");
             if (socket < 0) {
                 perror("listen socket bind error\n");
                 return EXIT_FAILURE;
             }
             
             int pid = fork();
-            if (pid == 0) {
-                close(sockFd);
+            if (pid == 0 && processes[0] == 1) {
+                close(socketFd); //dont need parent socket
                 while (1) {
                     memset(msg, 0, sizeof(msg));
                     
@@ -213,11 +213,14 @@ int main(int argc, char *argv[]) {
                     } else if (result == 6) {
                         sprintf(answer, " ");
                         processes[processCounter] = 0;  // indicates client is done
+                        close(clientFd);
                         return EXIT_SUCCESS;
                     } else if (result == 7) {
                         sprintf(answer, " ");
                         processes[0] = 0; //send shutdown signal
                         processes[processCounter] = 0; // indicates client is done
+                        close(clientFd);
+                        shutdown(socketFd, SHUT_RDWR);
                         return EXIT_SUCCESS;
                     } else {
                         sprintf(answer, "Error: Command \"%s\" not found", sentMsg->function);
@@ -233,12 +236,10 @@ int main(int argc, char *argv[]) {
                 }
             } else {
                 //close the socket for the parent as we dont need it
-                close(socket);
+                close(clientFd);
             }
             processCounter++;
         }
-        
-        
     }
-    
+    close(socketFd);
 }
