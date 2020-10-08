@@ -7,7 +7,7 @@
 #include "a1_lib.h"
 
 #define BUFSIZE   2024
-#define NUMBER_CLIENT 10
+#define NUMBER_CLIENT 15
 
 int addInts(char *cmd) {
     char *token = strtok(cmd, " ");
@@ -28,7 +28,6 @@ int multiplyInts(char *cmd) {
 }
 
 int isValidDivition(char *cmd) {
-//    fprintf(stderr, "in valid div %s\n", cmd);
     char *token = strtok(cmd, " ");
     float x = atof(token);
     token = strtok(NULL, " ");
@@ -86,7 +85,7 @@ int isInputLengthValid(char *cmd, int expectedLength) {
     return curr == expectedLength;
 }
 
-int isEqual(int *arr) {
+int isAllDone(int *arr) {
     for (int i = 1; i < NUMBER_CLIENT; ++i) {
         if (arr[i] != 0) {
             return 0;
@@ -134,7 +133,7 @@ int main(int argc, char *argv[]) {
             if (processes[0] == 0) {
                 close(socketFd);
                 fprintf(stderr, "prearing shutdown, waiting on process to finish \n");
-                if (isEqual(processes)) {
+                if (isAllDone(processes)) {
                     kill(0, SIGTERM);
                     free(processes);
                     break;
@@ -147,33 +146,33 @@ int main(int argc, char *argv[]) {
                 fprintf(stderr, "c%d, s%d | ", i, processes[i]);
             }
             printf("\n");
-            sleep(1);
+            usleep(250);
         }
     } else {
         //this is where we accept client calls
         while (1) {
             int socket = accept_connection(socketFd, &clientFd);
-            fprintf(stderr, "client accepted");
+            fprintf(stderr, "client accepted\n");
             if (socket < 0) {
                 perror("listen socket bind error\n");
                 return EXIT_FAILURE;
             }
             
             int pid = fork();
-            if (pid == 0 && processes[0] == 1) {
+            if (pid == 0 && processes[0]) {
                 close(socketFd); //dont need parent socket
-                while (1) {
+                while (processes[0]) {
                     memset(msg, 0, sizeof(msg));
-                    
+            
                     ssize_t byteCount = recv_message(clientFd, msg, BUFSIZE);
+                    processes[processCounter] = 1;
+            
                     sentMsg = (message *) msg;
                     dup2(clientFd, fileno(stdout));
-//                fprintf(stderr, "msg received: func %s ,args %s  counter %d\n", sentMsg->function, sentMsg->arguments, processCounter);
-                    processes[processCounter] = 1;
                     fprintf(stderr, "counter %d \n", processCounter);
                     strcpy(msgCopy, sentMsg->arguments);
                     int result = isCommandValid(sentMsg->function);
-//                fprintf(stderr, "s:%s   d:%d \n", sentMsg->arguments, result);
+            
                     if (result == 1) {
                         if (isInputLengthValid(sentMsg->arguments, 3)) {
                             sprintf(answer, "%d", addInts(msgCopy));
@@ -220,7 +219,6 @@ int main(int argc, char *argv[]) {
                         processes[0] = 0; //send shutdown signal
                         processes[processCounter] = 0; // indicates client is done
                         close(clientFd);
-                        shutdown(socketFd, SHUT_RDWR);
                         return EXIT_SUCCESS;
                     } else {
                         sprintf(answer, "Error: Command \"%s\" not found", sentMsg->function);
