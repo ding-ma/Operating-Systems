@@ -4,14 +4,11 @@ project(ECSE427 C)
 set(CMAKE_C_STANDARD 99)
 
 add_library(
-        a1_lib
-        Assignment-1/a1_lib.h
-        Assignment-1/a1_lib.c
+        a2_sut
+        Assignment-2/sut.c
+        Assignment-2/sut.h
 )
 
-
-
-add_executable(frontend Assignment-1/Client.c)
-add_executable(backend Assignment-1/Server.c)
-target_link_libraries(frontend PRIVATE a1_lib)
-target_link_libraries(backend PRIVATE a1_lib)
+add_executable(test1 Assignment-2/test1.c)
+target_link_libraries(test1 PRIVATE a2_sut)
+target_include_directories(test1 PRIVATE Assignment-2/queue.h)
