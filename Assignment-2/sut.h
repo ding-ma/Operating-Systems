@@ -1,5 +1,5 @@
-#ifndef __SUT_H__
-#define __SUT_H__
+#ifndef SUT_H
+#define SUT_H
 
 #include <stdbool.h>
 

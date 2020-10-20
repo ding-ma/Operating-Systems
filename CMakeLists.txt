@@ -12,3 +12,5 @@ add_library(
 add_executable(test1 Assignment-2/test1.c)
 target_link_libraries(test1 PRIVATE a2_sut)
 target_include_directories(test1 PRIVATE Assignment-2/queue.h)
+
+add_executable(scratch Assignment-2/scratch.c)
