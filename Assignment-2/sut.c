@@ -18,15 +18,41 @@ struct job {
     char stack[16 * 1024];
 };
 
+void *cpuTask() {
+    while (1) {
+        struct queue_entry *next = queue_peek_front(&cpuQueue);
+        if (next != NULL) {
+            struct job *toExecute = (struct job *) (next->data);
+            swapcontext(&main, &toExecute->context);
+        } else {
+            pthread_testcancel();
+//            printf("1212");
+        }
+    }
+}
+
+void *ioTask() {
+
+}
+
 void sut_init() {
     cpuQueue = queue_create();
     queue_init(&cpuQueue);
     /**
      * if exit == true, break the while 1 loop
      */
+//    pthread_t cpuThread, ioThread;
+//    if (pthread_create(&cpuThread, NULL, cpuTask, NULL) !=0){
+//        perror("Could not create CPU thread");
+//    }
+//    pthread_join(cpuThread, NULL);
+//
+//    pthread_create(&ioThread, NULL, ioTask, NULL);
+//    pthread_join(ioThread, NULL);
 }
 
 bool sut_create(sut_task_f fn) {
+    printf("creating job");
     struct job *j;
     j = malloc(sizeof(struct job));
     
@@ -45,9 +71,7 @@ bool sut_create(sut_task_f fn) {
     
     struct queue_entry *node = queue_new_node(j);
     queue_insert_tail(&cpuQueue, node);
-    struct queue_entry *n = queue_pop_head(&cpuQueue);
-    struct job *toExecute = (struct job *) (n->data);
-    swapcontext(&main, &toExecute->context); //cant typecast
+    
     
     //check for error. if there is, return false.
     return true;
@@ -55,30 +79,23 @@ bool sut_create(sut_task_f fn) {
 
 void sut_yield() {
     
-    struct queue_entry *main = queue_pop_head(&cpuQueue);
-    queue_insert_tail(&cpuQueue, main);
-    printf("yield \n");
-//    swapcontext( &main);
+    struct queue_entry *head = queue_pop_head(&cpuQueue);
+    queue_insert_tail(&cpuQueue, head);
+    
+    struct job *toSwap = (struct job *) (head->data);
+    swapcontext(&toSwap->context, &main);
 }
 
 void sut_exit() {
     while (1) {
         struct queue_entry *next = queue_peek_front(&cpuQueue);
         if (next != NULL) {
-            struct job *toExecute = (struct job *) next->data;
-            printf("job after %p \n", (void *) &toExecute);
-            printf("node after %p \n", (void *) &next);
-            printf("context after %p \n", (void *) &toExecute->stack);
-            
+            struct job *toExecute = (struct job *) (next->data);
             swapcontext(&main, &toExecute->context);
-            break;
-//            swapcontext(&main,&j->context);
-            printf("here? \n");
         } else {
-            printf("empty!");
             break;
+//            printf("1212");
         }
-        printf("????????? \n");
     }
 }
 

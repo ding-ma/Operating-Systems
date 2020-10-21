@@ -6,7 +6,7 @@ void hello1() {
     int i;
     for (i = 0; i < 100; i++) {
         printf("Hello world!, this is SUT-One %d\n", i);
-//        sut_yield();
+        sut_yield();
     }
 }
 
@@ -21,6 +21,6 @@ void hello2() {
 int main() {
     sut_init();
     sut_create(hello1);
-//    sut_create(hello2);
-//    sut_exit();
+    sut_create(hello2);
+    sut_exit();
 }
