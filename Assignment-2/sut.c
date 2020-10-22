@@ -15,11 +15,13 @@ struct queue ioQueue;
 static ucontext_t main;
 static pthread_t cpuThread, ioThread;
 pthread_mutex_t exitCall;
-pthread_mutex_t addedFirstElement;
+int taskCounter, currentTask;
 
-struct job {
+struct task {
+    int taskId;
+    char *taskStack;
+    void *taskFunction;
     ucontext_t context;
-    char stack[16 * 1024];
 };
 
 // todo wait for item to be added to list
@@ -30,91 +32,100 @@ struct job {
  */
 
 
-void *cpuTask(void *args) {
-    pthread_mutex_lock(&addedFirstElement);
+void *cpuExecutor(void *args) {
+    printf("CPU Thread start\n");
     while (1) {
         struct queue_entry *next = queue_peek_front(&cpuQueue);
         if (next != NULL) {
-            struct job *toExecute = (struct job *) (next->data);
+            struct task *toExecute = (struct task *) (next->data);
             swapcontext(&main, &toExecute->context);
         } else {
-            if (pthread_cancel(cpuThread) == 0) {
-                break;
-            }
+//            if (pthread_cancel(cpuThread) == 0) {
+//                break;
+//            }
         }
+        usleep(100);
     }
     return NULL;
 }
 
-void *ioTask(void *args) {
+void *ioExecutor(void *args) {
     return NULL;
 }
 
 void sut_init() {
+    taskCounter = 0;
+    currentTask = 0;
     
-    if (pthread_mutex_init(&addedFirstElement, NULL) != 0) {
-        printf("\n mutex init has failed\n");
-        exit(1);
-    }
-    
-    pthread_mutex_lock(&addedFirstElement);
     pthread_mutex_lock(&exitCall);
     
     cpuQueue = queue_create();
     queue_init(&cpuQueue);
-    /**
-     * if exit == true, break the while 1 loop
-     */
-    
-    if (pthread_create(&cpuThread, NULL, cpuTask, NULL) != 0) {
-        perror("Could not create CPU thread");
+    if (pthread_create(&cpuThread, NULL, cpuExecutor, NULL) != 0) {
+        perror("Could not create CPU thread\n");
         exit(1);
     }
 
-//    if (pthread_create(&ioThread, NULL, ioTask, NULL) !=0){
+//    ioQueue = queue_create();
+//    queue_init(&ioQueue);
+//    if (pthread_create(&ioThread, NULL, ioExecutor, NULL) !=0){
 //        perror("Could not create CPU thread");
 //        exit(1);
 //    }
+    printf("Library initialized\n");
 }
 
 bool sut_create(sut_task_f fn) {
-    struct job *j;
-    j = malloc(sizeof(struct job));
+    struct task *t;
+    t = malloc(sizeof(struct task));
     
-    getcontext(&j->context);
+    getcontext(&t->context);
     
-    j->context.uc_stack.ss_sp = j->stack;
-    j->context.uc_stack.ss_size = sizeof(j->stack);
-    j->context.uc_link = &main;
-    makecontext(&j->context, fn, 0);
-
+    t->taskId = taskCounter;
+    t->taskStack = (char *) malloc(STACK_SIZE);
+    t->context.uc_stack.ss_sp = t->taskStack;
+    t->context.uc_stack.ss_size = STACK_SIZE;
+    t->context.uc_link = 0;
+    t->context.uc_stack.ss_flags = 0;
+    t->taskFunction = fn;
+    
+    makecontext(&(t->context), fn, 1, t);
+    
+    taskCounter++;
 //    swapcontext(&main,&j->context);
 
-//    printf("job BEFORE %p \n", (void *)&j);
+//    printf("task BEFORE %p \n", (void *)&j);
 //    printf("node BEFORE %p \n", (void *)&node);
 //    printf("context BEFORE %p \n", (void *)&j->context);
     
-    struct queue_entry *node = queue_new_node(j);
+    struct queue_entry *node = queue_new_node(t);
     queue_insert_tail(&cpuQueue, node);
+    printf("Task Created\n");
     
-    pthread_mutex_unlock(&addedFirstElement);
     //check for error. if there is, return false.
     return true;
 }
 
 void sut_yield() {
+    printf("Yielding task \n");
     struct queue_entry *head = queue_pop_head(&cpuQueue);
     queue_insert_tail(&cpuQueue, head);
     
-    struct job *toSwap = (struct job *) (head->data);
+    struct task *toSwap = (struct task *) (head->data);
     swapcontext(&toSwap->context, &main);
 }
 
 void sut_exit() {
     //send shutdown signal
-    pthread_kill(cpuThread, 0);
-    pthread_join(cpuThread, NULL);
+//    pthread_kill(cpuThread, 0);
+//    pthread_join(cpuThread, NULL);
     
+}
+
+void sut_shutdown() {
+    while (1) {
+    
+    }
 }
 
 void sut_open(char *dest, int port) {

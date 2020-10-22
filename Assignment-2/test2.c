@@ -7,6 +7,7 @@ void hello1() {
         printf("Hello world!, this is SUT-One %d\n", i);
         sut_yield();
     }
+    sut_exit();
 }
 
 void hello2() {
@@ -15,6 +16,7 @@ void hello2() {
         printf("Hello world!, this is SUT-Two %d\n", i);
         sut_yield();
     }
+    sut_exit();
 }
 
 void hello3() {
@@ -23,6 +25,7 @@ void hello3() {
         printf("Hello world!, this is SUT-Three %d\n", i);
         sut_yield();
     }
+    sut_exit();
 }
 
 void hello4() {
@@ -31,6 +34,7 @@ void hello4() {
         printf("Hello world!, this is SUT-Four %d\n", i);
         sut_yield();
     }
+    sut_exit();
 }
 
 void hello5() {
@@ -39,6 +43,7 @@ void hello5() {
         printf("Hello world!, this is SUT-Five %d\n", i);
         sut_yield();
     }
+    sut_exit();
 }
 
 int main() {
@@ -48,5 +53,5 @@ int main() {
     sut_create(hello3);
     sut_create(hello4);
     sut_create(hello5);
-    sut_exit();
+    sut_shutdown();
 }
