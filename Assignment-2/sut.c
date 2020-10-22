@@ -61,7 +61,7 @@ void *cpuExecutor(void *args) {
 void *ioExecutor(void *args) {
     printf("IO Thread start \n");
     while (1) {
-        usleep(100);
+        usleep(200);
         if (queue_peek_front(&ioQueue) != NULL) {
             struct queue_entry *next = queue_pop_head(&ioQueue);
             struct ioTask *ioToExecute = (struct ioTask *) (next->data);
@@ -69,14 +69,14 @@ void *ioExecutor(void *args) {
             
             }
             if (ioToExecute->taskType == 2) { //write
-                printf("IO THREAD %s", ioToExecute->firstArg);
+                send_message(socketFd, ioToExecute->firstArg, ioToExecute->secondArg);
+                printf("Message Sent to server...\n");
             }
 
 //            queue_insert_tail(&cpuQueue, ioToExecute->cpuEntry);
         } else {
 //            printf("IO Queue empty!\n");
         }
-        usleep(100);
     }
     pthread_exit(NULL);
 }
@@ -160,7 +160,7 @@ void sut_open(char *dest, int port) {
         perror("client socket create error\n");
         exit(EXIT_FAILURE);
     }
-    printf("Connected To Server!");
+    printf("Connected To Server!\n");
 }
 
 void sut_write(char *buf, int size) {
@@ -179,7 +179,8 @@ void sut_write(char *buf, int size) {
 }
 
 void sut_close() {
-
+    close(socketFd); //this will close connection between server and SUT. it will also terminate the server.
+    printf("Connection closed\n");
 }
 
 char *sut_read() {
