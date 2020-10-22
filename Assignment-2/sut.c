@@ -9,6 +9,7 @@
 #include <pthread.h>
 #include <string.h>
 #include <signal.h>
+#include "socket_lib.h"
 
 struct queue cpuQueue;
 struct queue ioQueue;
@@ -17,6 +18,7 @@ static pthread_t cpuThread, ioThread;
 int cpuTaskCounter, ioTaskCounter;
 pthread_mutex_t cpuLock = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t ioLock = PTHREAD_MUTEX_INITIALIZER;
+int socketFd;
 
 struct cpuTask {
     int cpuTaskId;
@@ -25,10 +27,9 @@ struct cpuTask {
     ucontext_t context;
 };
 
-
 struct ioTask {
     int ioTaskId;
-    int taskType; //1: read, 2:write, 3: open
+    int taskType; //1: read, 2:write
     char *firstArg;
     int secondArg;
     struct queue_entry *cpuEntry;
@@ -49,9 +50,7 @@ void *cpuExecutor(void *args) {
             struct cpuTask *toExecute = (struct cpuTask *) (next->data);
             swapcontext(&main, &toExecute->context);
         } else {
-            printf("Queue empty!\n");
-            pthread_mutex_unlock(&cpuLock);
-//            pthread_spin_unlock(&isCpuDone);//todo break only if IO queue is empty
+//            printf("CPU Queue empty!\n");
 //            // dont know if it will block here if there are no tasks though.
 //            break;
         }
@@ -72,11 +71,10 @@ void *ioExecutor(void *args) {
             if (ioToExecute->taskType == 2) { //write
                 printf("IO THREAD %s", ioToExecute->firstArg);
             }
-            if (ioToExecute->taskType == 3) { //open
-            
-            }
-            
-            queue_insert_tail(&cpuQueue, ioToExecute->cpuEntry);
+
+//            queue_insert_tail(&cpuQueue, ioToExecute->cpuEntry);
+        } else {
+//            printf("IO Queue empty!\n");
         }
         usleep(100);
     }
@@ -146,17 +144,23 @@ void sut_exit() {
 void sut_shutdown() {
     //wait until there are no more elements in queue.
     // send shutdown signal to thread
-//    while (1);
-    pthread_mutex_lock(&cpuLock);
+    while (queue_peek_front(&cpuQueue) != NULL || queue_peek_front(&ioQueue) != NULL);
     pthread_cancel(cpuThread);
-    printf("CPU thread Terminated\n");
+    pthread_cancel(ioThread);
+    pthread_join(cpuThread, NULL);
+    pthread_join(ioThread, NULL);
+    printf("CPU and IO thread Terminated\n");
     
     pthread_mutex_destroy(&cpuLock);
     pthread_mutex_destroy(&ioLock);
 }
 
 void sut_open(char *dest, int port) {
-
+    if (connect_to_server(HOST, PORT, &socketFd) < 0) {
+        perror("client socket create error\n");
+        exit(EXIT_FAILURE);
+    }
+    printf("Connected To Server!");
 }
 
 void sut_write(char *buf, int size) {
@@ -167,7 +171,7 @@ void sut_write(char *buf, int size) {
     ioTask->taskType = 2;
     ioTask->firstArg = buf;
     ioTask->secondArg = size;
-    ioTask->cpuEntry = queue_pop_head(&cpuQueue);
+    ioTask->cpuEntry = queue_peek_front(&cpuQueue);
     
     queue_insert_tail(&ioQueue, queue_new_node(ioTask));
     
