@@ -14,8 +14,8 @@ struct queue cpuQueue;
 struct queue ioQueue;
 static ucontext_t main;
 static pthread_t cpuThread, ioThread;
-pthread_mutex_t exitCall;
-int taskCounter, currentTask;
+int taskCounter;
+pthread_spinlock_t isCpuDone;
 
 struct task {
     int taskId;
@@ -24,7 +24,6 @@ struct task {
     ucontext_t context;
 };
 
-// todo wait for item to be added to list
 //  todo wait for shutdown signal
 
 /*
@@ -40,13 +39,13 @@ void *cpuExecutor(void *args) {
             struct task *toExecute = (struct task *) (next->data);
             swapcontext(&main, &toExecute->context);
         } else {
-//            if (pthread_cancel(cpuThread) == 0) {
-//                break;
-//            }
+            pthread_spin_unlock(&isCpuDone);//todo break only if IO queue is empty
+            // dont know if it will block here if there are no tasks though.
+            break;
         }
         usleep(100);
     }
-    return NULL;
+    pthread_exit(NULL);
 }
 
 void *ioExecutor(void *args) {
@@ -55,9 +54,8 @@ void *ioExecutor(void *args) {
 
 void sut_init() {
     taskCounter = 0;
-    currentTask = 0;
-    
-    pthread_mutex_lock(&exitCall);
+    pthread_spin_init(&isCpuDone, 0);
+    pthread_spin_lock(&isCpuDone);
     
     cpuQueue = queue_create();
     queue_init(&cpuQueue);
@@ -72,7 +70,7 @@ void sut_init() {
 //        perror("Could not create CPU thread");
 //        exit(1);
 //    }
-    printf("Library initialized\n");
+//    printf("Library initialized\n");
 }
 
 bool sut_create(sut_task_f fn) {
@@ -80,7 +78,6 @@ bool sut_create(sut_task_f fn) {
     t = malloc(sizeof(struct task));
     
     getcontext(&t->context);
-    
     t->taskId = taskCounter;
     t->taskStack = (char *) malloc(STACK_SIZE);
     t->context.uc_stack.ss_sp = t->taskStack;
@@ -88,26 +85,18 @@ bool sut_create(sut_task_f fn) {
     t->context.uc_link = 0;
     t->context.uc_stack.ss_flags = 0;
     t->taskFunction = fn;
-    
     makecontext(&(t->context), fn, 1, t);
-    
     taskCounter++;
-//    swapcontext(&main,&j->context);
-
-//    printf("task BEFORE %p \n", (void *)&j);
-//    printf("node BEFORE %p \n", (void *)&node);
-//    printf("context BEFORE %p \n", (void *)&j->context);
     
     struct queue_entry *node = queue_new_node(t);
     queue_insert_tail(&cpuQueue, node);
-    printf("Task Created\n");
+//    printf("Task Created\n");
     
     //check for error. if there is, return false.
     return true;
 }
 
 void sut_yield() {
-    printf("Yielding task \n");
     struct queue_entry *head = queue_pop_head(&cpuQueue);
     queue_insert_tail(&cpuQueue, head);
     
@@ -115,17 +104,19 @@ void sut_yield() {
     swapcontext(&toSwap->context, &main);
 }
 
+//only difference is that when a task calls exit, we dont add it to the queue
 void sut_exit() {
-    //send shutdown signal
-//    pthread_kill(cpuThread, 0);
-//    pthread_join(cpuThread, NULL);
-    
+    struct queue_entry *head = queue_pop_head(&cpuQueue);
+    struct task *toSwap = (struct task *) (head->data);
+    swapcontext(&toSwap->context, &main);
 }
 
 void sut_shutdown() {
-    while (1) {
-    
-    }
+    //wait until there are no more elements in queue.
+    // send shutdown signal to thread
+    pthread_spin_lock(&isCpuDone);
+    pthread_cancel(cpuThread);
+    printf("CPU thread Terminated\n");
 }
 
 void sut_open(char *dest, int port) {
