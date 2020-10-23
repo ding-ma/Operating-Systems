@@ -60,13 +60,24 @@ void *cpuExecutor(void *args) {
 
 void *ioExecutor(void *args) {
     printf("IO Thread start \n");
+    char readBuffer[READSIZE];
+    //todo need a lock
     while (1) {
         usleep(200);
         if (queue_peek_front(&ioQueue) != NULL) {
-            struct queue_entry *next = queue_pop_head(&ioQueue);
+            struct queue_entry *next = queue_peek_front(&ioQueue);
             struct ioTask *ioToExecute = (struct ioTask *) (next->data);
             if (ioToExecute->taskType == 1) { //read
-            
+                printf("reading\n");
+                sleep(2);
+//                memset(readBuffer,0,sizeof(READSIZE));
+//                ssize_t bytes = recv_message(socketFd, readBuffer, READSIZE);
+//                while (bytes < 0); //waits for msg of server
+//                printf("msg received %s\n", readBuffer);
+                strcpy(ioToExecute->firstArg, "AAAAAAAAA");
+                ioToExecute->secondArg = sizeof("AAA msg received %s\n");
+                queue_pop_head(&ioQueue);
+                queue_insert_tail(&cpuQueue, ioToExecute->cpuEntry);
             }
             if (ioToExecute->taskType == 2) { //write
                 send_message(socketFd, ioToExecute->firstArg, ioToExecute->secondArg);
@@ -138,13 +149,30 @@ void sut_yield() {
 void sut_exit() {
     struct queue_entry *head = queue_pop_head(&cpuQueue);
     struct cpuTask *toSwap = (struct cpuTask *) (head->data);
+    //frees memory as we dont need those pointers anymore - the task is finished
+    free(head);
+    free(toSwap);
     swapcontext(&toSwap->context, &main);
 }
 
 void sut_shutdown() {
     //wait until there are no more elements in queue.
     // send shutdown signal to thread
-    while (queue_peek_front(&cpuQueue) != NULL || queue_peek_front(&ioQueue) != NULL);
+
+//     while (queue_peek_front(&cpuQueue) != NULL || queue_peek_front(&ioQueue) != NULL); //this doesnt work!
+//    while (1){
+    while (1);
+////        struct queue_entry *cpu = queue_peek_front(&cpuQueue);
+////        struct queue_entry *io = queue_peek_front(&ioQueue);
+////        if (cpu==NULL && io==NULL){
+////            printf("Both empty");
+////        } else if(cpu == NULL){
+////            printf("cpu empty");
+////        } else if(io ==NULL){
+////            printf("io empty");
+////        }
+////        printf("\n");
+//    }
     pthread_cancel(cpuThread);
     pthread_cancel(ioThread);
     pthread_join(cpuThread, NULL);
@@ -156,10 +184,10 @@ void sut_shutdown() {
 }
 
 void sut_open(char *dest, int port) {
-    if (connect_to_server(HOST, PORT, &socketFd) < 0) {
-        perror("client socket create error\n");
-        exit(EXIT_FAILURE);
-    }
+//    if (connect_to_server(HOST, PORT, &socketFd) < 0) {
+//        perror("client socket create error\n");
+//        exit(EXIT_FAILURE);
+//    }
     printf("Connected To Server!\n");
 }
 
@@ -167,15 +195,13 @@ void sut_write(char *buf, int size) {
     struct ioTask *ioTask;
     ioTask = malloc(sizeof(struct ioTask));
     
-    ioTask->ioTaskId = ioTaskCounter;
+    ioTask->ioTaskId = ioTaskCounter++;
     ioTask->taskType = 2;
     ioTask->firstArg = buf;
     ioTask->secondArg = size;
     ioTask->cpuEntry = queue_peek_front(&cpuQueue);
     
     queue_insert_tail(&ioQueue, queue_new_node(ioTask));
-    
-    ioTaskCounter++;
 }
 
 void sut_close() {
@@ -184,5 +210,22 @@ void sut_close() {
 }
 
 char *sut_read() {
-    return NULL;
+    //perform read from server
+    
+    struct ioTask *ioTask;
+    ioTask = malloc(sizeof(struct ioTask));
+    
+    struct queue_entry *cpu = queue_pop_head(&cpuQueue);
+    ioTask->ioTaskId = ioTaskCounter++;
+    ioTask->taskType = 1;
+    ioTask->firstArg = (char *) malloc(READSIZE);
+    ioTask->secondArg = sizeof(ioTask->firstArg);
+    ioTask->cpuEntry = cpu;
+    
+    queue_insert_tail(&ioQueue, queue_new_node(ioTask));
+    struct cpuTask *t = (struct cpuTask *) cpu->data;
+    
+    swapcontext(&t->context, &main);
+    
+    return ioTask->firstArg;
 }

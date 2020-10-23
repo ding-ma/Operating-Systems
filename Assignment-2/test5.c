@@ -7,10 +7,10 @@ void hello1() {
     char *str;
     sut_open(HOST, PORT);
     for (i = 0; i < 10; i++) {
-        str = sut_read();
+        str = sut_read(); //should be blocking
         if (strlen(str) != 0) {
             printf("I am SUT-One, message from server: %s\n", str);
-            
+        
         } else {
             printf("ERROR!, empty message received \n");
         }
