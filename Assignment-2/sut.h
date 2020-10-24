@@ -34,6 +34,7 @@ void sut_exit();
 
 /**
  * Opens a connection with the server. Those can be change in sut.h
+ * Inserts the request at the end of IO queue
  * @param dest hostIp
  * @param port hostPort
  */

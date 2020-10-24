@@ -78,7 +78,7 @@ int connect_to_server(const char *host, uint16_t port, int *sockfd) {
     inet_pton(AF_INET, host, &(server_address.sin_addr.s_addr));
     server_address.sin_port = htons(port);
     if (connect(*sockfd, (struct sockaddr *) &server_address, sizeof(server_address)) < 0) {
-        perror("Failed to connect to server\n");
+//        perror("Failed to connect to server\n");
         return -1;
     }
     return 0;
