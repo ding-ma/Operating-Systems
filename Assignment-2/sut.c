@@ -49,10 +49,6 @@ void *cpuExecutor(void *args) {
         if (next != NULL) {
             struct cpuTask *toExecute = (struct cpuTask *) (next->data);
             swapcontext(&main, &toExecute->context);
-        } else {
-//            printf("CPU Queue empty!\n");
-//            // dont know if it will block here if there are no tasks though.
-//            break;
         }
     }
     pthread_exit(NULL);
@@ -62,6 +58,7 @@ void *ioExecutor(void *args) {
     printf("IO Thread start \n");
     char readBuffer[READSIZE];
     bool isConnectionSuccess = 0;
+    srand(time(NULL)); //used to simulate read()
     
     //todo need a lock
     while (1) {
@@ -70,20 +67,20 @@ void *ioExecutor(void *args) {
         if (next != NULL) {
             struct ioTask *ioToExecute = (struct ioTask *) (next->data);
             if (ioToExecute->taskType == 1 && isConnectionSuccess) { //read
-                //simulates a slow blocking read
-                printf("reading\n");
-                sleep(2);
+                //simulates a slow blocking read between 1 and 10s
+                int simulateRead = rand() % 10 + 1;
+                printf("reading for %d\n", simulateRead);
+                sleep(simulateRead);
                 strcpy(ioToExecute->firstArg, "AAAAAAAAA");
                 ioToExecute->secondArg = sizeof("AAA msg received %s\n");
-                //
 
 //                memset(readBuffer,0,sizeof(READSIZE));
 //                ssize_t bytes = recv_message(socketFd, readBuffer, READSIZE);
 //                while (bytes < 0); //waits for msg of server
 //                printf("msg received %s\n", readBuffer);
                 
-                queue_pop_head(&ioQueue);
                 queue_insert_tail(&cpuQueue, ioToExecute->cpuEntry);
+                queue_pop_head(&ioQueue);
             }
             if (ioToExecute->taskType == 2 && isConnectionSuccess) { //write
                 send_message(socketFd, ioToExecute->firstArg, ioToExecute->secondArg);
@@ -93,7 +90,7 @@ void *ioExecutor(void *args) {
             
             if (ioToExecute->taskType == 3) {
                 if (connect_to_server(ioToExecute->firstArg, ioToExecute->secondArg, &socketFd) < 0) {
-                    printf("Could not connect to server %s:%d \n", ioToExecute->firstArg, ioToExecute->secondArg);
+                    printf("Could not connect to server %s:%d !\n", ioToExecute->firstArg, ioToExecute->secondArg);
                     printf("Skipping the current IO tasks \n");
                 } else {
                     printf("Connected To Server!\n");
@@ -101,13 +98,9 @@ void *ioExecutor(void *args) {
                 }
                 queue_pop_head(&ioQueue);
             }
-            
             if (!isConnectionSuccess) {
                 queue_pop_head(&ioQueue);
             }
-//            queue_insert_tail(&cpuQueue, ioToExecute->cpuEntry);
-        } else {
-//            printf("IO Queue empty!\n");
         }
     }
     pthread_exit(NULL);
@@ -178,26 +171,10 @@ void sut_exit() {
 
 void sut_shutdown() {
     //wait until there are no more elements in queue.
-    // send shutdown signal to thread
     //todo implement lock
     while (queue_peek_front(&cpuQueue) != NULL || queue_peek_front(&ioQueue) != NULL) {
-        sleep(1);
-    } //this doesnt work!
-//    while (1){
-//        struct queue_entry *cpu = queue_peek_front(&cpuQueue);
-//        struct queue_entry *io = queue_peek_front(&ioQueue);
-//        if (cpu!=NULL && io!=NULL){
-//            printf("Both not empty");
-//        } else if(cpu != NULL){
-//            printf("cpu not empty");
-//        } else if(io !=NULL){
-//            printf("io not empty");
-//        }else{
-//            printf("all empty");
-//        }
-//        printf("\n");
-//        usleep(5000);
-//    }
+        usleep(5000);
+    }
     pthread_cancel(cpuThread);
     pthread_cancel(ioThread);
     pthread_join(cpuThread, NULL);
