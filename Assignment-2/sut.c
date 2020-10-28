@@ -65,34 +65,25 @@ void *ioExecutor(void *args) {
         usleep(200);
         struct queue_entry *next = queue_peek_front(&ioQueue);
         if (next != NULL) {
+    
             struct ioTask *ioToExecute = (struct ioTask *) (next->data);
             if (ioToExecute->taskType == 1 && isConnectionSuccess) { //read
-                //simulates a slow blocking read between 1 and 10s
-//                int simulateRead = rand() % 10 + 1;
-//                printf("reading for %d\n", simulateRead);
-//                sleep(simulateRead);
-//                strcpy(ioToExecute->firstArg, "AAAAAAAAA");
-//                ioToExecute->secondArg = sizeof("AAA msg received %s\n");
-    
                 memset(readBuffer, 0, sizeof(READSIZE));
                 while (1) {
-                    ssize_t byte_count = recv_message(socketFd, readBuffer, sizeof(READSIZE));
+                    ssize_t byte_count = recv_message(socketFd, readBuffer, READSIZE);
                     if (byte_count > 0) {
-                        printf("READ %s\n", readBuffer);
                         strcpy(ioToExecute->firstArg, readBuffer);
                         break;
                     }
                 }
-    
                 queue_insert_tail(&cpuQueue, ioToExecute->cpuEntry);
-                queue_pop_head(&ioQueue);
             }
+    
             if (ioToExecute->taskType == 2 && isConnectionSuccess) { //write
                 send_message(socketFd, ioToExecute->firstArg, ioToExecute->secondArg);
                 printf("Message Sent to server...\n");
-                queue_pop_head(&ioQueue);
             }
-            
+    
             if (ioToExecute->taskType == 3) {
                 if (connect_to_server(ioToExecute->firstArg, ioToExecute->secondArg, &socketFd) < 0) {
                     printf("Could not connect to server %s:%d !\n", ioToExecute->firstArg, ioToExecute->secondArg);
@@ -101,11 +92,9 @@ void *ioExecutor(void *args) {
                     printf("Connected To Server!\n");
                     isConnectionSuccess = 1;
                 }
-                queue_pop_head(&ioQueue);
             }
-            if (!isConnectionSuccess) {
-                queue_pop_head(&ioQueue);
-            }
+            queue_pop_head(&ioQueue);
+    
         }
     }
     pthread_exit(NULL);
