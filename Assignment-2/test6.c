@@ -9,7 +9,7 @@ void hello1() {
     int i;
     printf("Start\n");
     sut_yield();
-    sut_open(HOST, PORT);
+    sut_open("0.0.0.0", 6969);
     char sbuf[128];
     char *str;
     for (i = 0; i < 100; i++) {

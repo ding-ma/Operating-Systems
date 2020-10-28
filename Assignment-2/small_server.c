@@ -25,12 +25,17 @@ int main(void) {
     
     int i = 0;
     while (strcmp(msg, "quit\n")) {
+        ////////////////////////////////////////////////
+        // Comment out the follow lines if you are testing READ() from sut
         memset(msg, 0, sizeof(msg));
         ssize_t byte_count = recv_message(clientfd, msg, BUFSIZE);
         if (byte_count > 0) {
             printf("Client: %s\n", msg);
         }
-        
+        ////////////////////////////////////////////////
+    
+        ////////////////////////////////////////////////
+        // Comment out the follow lines if you are testing WRITE() from sut
         int simulateRead = rand() % 10 + 1;
         sprintf(greeting, "hello world from server %d", i);
         printf("blocking read for %d\n", simulateRead);
@@ -38,7 +43,8 @@ int main(void) {
         sleep(simulateRead);
         i++;
         memset(greeting, 0, sizeof(greeting));
-        
+        ////////////////////////////////////////////////
+    
     }
     
     return 0;
