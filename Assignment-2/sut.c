@@ -68,17 +68,22 @@ void *ioExecutor(void *args) {
             struct ioTask *ioToExecute = (struct ioTask *) (next->data);
             if (ioToExecute->taskType == 1 && isConnectionSuccess) { //read
                 //simulates a slow blocking read between 1 and 10s
-                int simulateRead = rand() % 10 + 1;
-                printf("reading for %d\n", simulateRead);
-                sleep(simulateRead);
-                strcpy(ioToExecute->firstArg, "AAAAAAAAA");
-                ioToExecute->secondArg = sizeof("AAA msg received %s\n");
-
-//                memset(readBuffer,0,sizeof(READSIZE));
-//                ssize_t bytes = recv_message(socketFd, readBuffer, READSIZE);
-//                while (bytes < 0); //waits for msg of server
-//                printf("msg received %s\n", readBuffer);
-                
+//                int simulateRead = rand() % 10 + 1;
+//                printf("reading for %d\n", simulateRead);
+//                sleep(simulateRead);
+//                strcpy(ioToExecute->firstArg, "AAAAAAAAA");
+//                ioToExecute->secondArg = sizeof("AAA msg received %s\n");
+    
+                memset(readBuffer, 0, sizeof(READSIZE));
+                while (1) {
+                    ssize_t byte_count = recv_message(socketFd, readBuffer, sizeof(READSIZE));
+                    if (byte_count > 0) {
+                        printf("READ %s\n", readBuffer);
+                        strcpy(ioToExecute->firstArg, readBuffer);
+                        break;
+                    }
+                }
+    
                 queue_insert_tail(&cpuQueue, ioToExecute->cpuEntry);
                 queue_pop_head(&ioQueue);
             }
