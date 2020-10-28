@@ -19,6 +19,7 @@ int cpuTaskCounter, ioTaskCounter;
 pthread_mutex_t cpuLock = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t ioLock = PTHREAD_MUTEX_INITIALIZER;
 int socketFd;
+int clientFd;
 
 struct cpuTask {
     int cpuTaskId;
@@ -68,39 +69,40 @@ void *ioExecutor(void *args) {
             struct ioTask *ioToExecute = (struct ioTask *) (next->data);
             if (ioToExecute->taskType == 1 && isConnectionSuccess) { //read
                 //simulates a slow blocking read between 1 and 10s
-                int simulateRead = rand() % 10 + 1;
-                printf("reading for %d\n", simulateRead);
-                sleep(simulateRead);
-                strcpy(ioToExecute->firstArg, "AAAAAAAAA");
-                ioToExecute->secondArg = sizeof("AAA msg received %s\n");
-
-//                memset(readBuffer,0,sizeof(READSIZE));
-//                ssize_t bytes = recv_message(socketFd, readBuffer, READSIZE);
-//                while (bytes < 0); //waits for msg of server
-//                printf("msg received %s\n", readBuffer);
-                
+//                int simulateRead = rand() % 10 + 1;
+//                printf("reading for %d\n", simulateRead);
+//                sleep(simulateRead);
+//                strcpy(ioToExecute->firstArg, "AAAAAAAAA");
+//                ioToExecute->secondArg = sizeof("AAA msg received %s\n");
+    
+                memset(readBuffer, 0, sizeof(READSIZE));
+                while (1) {
+                    ssize_t bytes = recv_message(clientFd, readBuffer, READSIZE);
+                    if (bytes > 0) {
+                        strcpy(ioToExecute->firstArg, readBuffer);
+                        printf("received!");
+                        break;
+                    }
+                }
+                printf("msg received %s\n", readBuffer);
                 queue_insert_tail(&cpuQueue, ioToExecute->cpuEntry);
-                queue_pop_head(&ioQueue);
             }
             if (ioToExecute->taskType == 2 && isConnectionSuccess) { //write
                 send_message(socketFd, ioToExecute->firstArg, ioToExecute->secondArg);
                 printf("Message Sent to server...\n");
-                queue_pop_head(&ioQueue);
             }
             
             if (ioToExecute->taskType == 3) {
-                if (connect_to_server(ioToExecute->firstArg, ioToExecute->secondArg, &socketFd) < 0) {
+                if (create_server(ioToExecute->firstArg, ioToExecute->secondArg, &socketFd) < 0 &&
+                    accept_connection(socketFd, &clientFd) < 0) {
                     printf("Could not connect to server %s:%d !\n", ioToExecute->firstArg, ioToExecute->secondArg);
                     printf("Skipping the current IO tasks \n");
                 } else {
                     printf("Connected To Server!\n");
                     isConnectionSuccess = 1;
                 }
-                queue_pop_head(&ioQueue);
             }
-            if (!isConnectionSuccess) {
                 queue_pop_head(&ioQueue);
-            }
         }
     }
     pthread_exit(NULL);

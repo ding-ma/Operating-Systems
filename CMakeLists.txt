@@ -27,6 +27,9 @@ add_library(
 add_executable(server Assignment-1/small_server.c)
 target_link_libraries(server PRIVATE socket_lib)
 
+add_executable(client Assignment-1/small_client.c)
+target_link_libraries(client PRIVATE socket_lib)
+
 foreach (test test1 test2 test3 test4 test5)
     add_executable(${test} Assignment-2/${test}.c)
     target_link_libraries(${test} ${a2_lib})
