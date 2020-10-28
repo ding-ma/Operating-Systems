@@ -5,7 +5,7 @@
 void hello1() {
     int i;
     char sbuf[128];
-    sut_open(HOST, PORT);
+    sut_open("0.0.0.0", 6969);
     for (i = 0; i < 100; i++) {
         sprintf(sbuf, "Hello world!, message from SUT-One i = %d \n", i);
         sut_write(sbuf, strlen(sbuf));

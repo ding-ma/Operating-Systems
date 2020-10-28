@@ -4,8 +4,6 @@
 #include <stdbool.h>
 
 #define STACK_SIZE (1024*64)
-#define HOST "0.0.0.0"
-#define PORT 6969
 #define READSIZE 1024
 
 typedef void (*sut_task_f)();
