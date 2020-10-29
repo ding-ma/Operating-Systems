@@ -27,11 +27,11 @@ int main(void) {
     while (strcmp(msg, "quit\n")) {
         ////////////////////////////////////////////////
         // Comment out the follow lines if you are testing READ() from sut
-        memset(msg, 0, sizeof(msg));
-        ssize_t byte_count = recv_message(clientfd, msg, BUFSIZE);
-        if (byte_count > 0) {
-            printf("Client: %s\n", msg);
-        }
+//        memset(msg, 0, sizeof(msg));
+//        ssize_t byte_count = recv_message(clientfd, msg, BUFSIZE);
+//        if (byte_count > 0) {
+//            printf("Client: %s\n", msg);
+//        }
         ////////////////////////////////////////////////
     
         ////////////////////////////////////////////////

@@ -45,7 +45,9 @@ void *cpuExecutor(void *args) {
     printf("CPU Thread start\n");
     while (1) {
         usleep(100);
+        pthread_mutex_lock(&cpuLock);
         struct queue_entry *next = queue_peek_front(&cpuQueue);
+        pthread_mutex_unlock(&cpuLock);
         if (next != NULL) {
             struct cpuTask *toExecute = (struct cpuTask *) (next->data);
             swapcontext(&main, &toExecute->context);
@@ -63,9 +65,12 @@ void *ioExecutor(void *args) {
     //todo need a lock
     while (1) {
         usleep(200);
+        pthread_mutex_lock(&ioLock);
         struct queue_entry *next = queue_peek_front(&ioQueue);
-        if (next != NULL) {
+        pthread_mutex_unlock(&ioLock);
     
+        if (next != NULL) {
+        
             struct ioTask *ioToExecute = (struct ioTask *) (next->data);
             if (ioToExecute->taskType == 1 && isConnectionSuccess) { //read
                 memset(readBuffer, 0, sizeof(READSIZE));
@@ -76,14 +81,17 @@ void *ioExecutor(void *args) {
                         break;
                     }
                 }
+                pthread_mutex_lock(&cpuLock);
                 queue_insert_tail(&cpuQueue, ioToExecute->cpuEntry);
+                pthread_mutex_unlock(&cpuLock);
+            
             }
     
             if (ioToExecute->taskType == 2 && isConnectionSuccess) { //write
                 send_message(socketFd, ioToExecute->firstArg, ioToExecute->secondArg);
                 printf("Message Sent to server...\n");
             }
-    
+        
             if (ioToExecute->taskType == 3) {
                 if (connect_to_server(ioToExecute->firstArg, ioToExecute->secondArg, &socketFd) < 0) {
                     printf("Could not connect to server %s:%d !\n", ioToExecute->firstArg, ioToExecute->secondArg);
@@ -93,8 +101,11 @@ void *ioExecutor(void *args) {
                     isConnectionSuccess = 1;
                 }
             }
+        
+            pthread_mutex_lock(&ioLock);
             queue_pop_head(&ioQueue);
-    
+            pthread_mutex_unlock(&ioLock);
+        
         }
     }
     pthread_exit(NULL);
@@ -107,7 +118,6 @@ void sut_init() {
     cpuQueue = queue_create();
     queue_init(&cpuQueue);
     
-    pthread_mutex_lock(&cpuLock);
     if (pthread_create(&cpuThread, NULL, cpuExecutor, NULL) != 0) {
         perror("Could not create CPU thread\n");
         exit(1);
@@ -138,7 +148,10 @@ bool sut_create(sut_task_f fn) {
     makecontext(&(t->context), fn, 1, t);
     cpuTaskCounter++;
     
+    pthread_mutex_lock(&cpuLock);
     queue_insert_tail(&cpuQueue, queue_new_node(t));
+    pthread_mutex_unlock(&cpuLock);
+    
     printf("Task Created\n");
     
     //check for error. if there is, return false.
@@ -146,8 +159,10 @@ bool sut_create(sut_task_f fn) {
 }
 
 void sut_yield() {
+    pthread_mutex_lock(&cpuLock);
     struct queue_entry *head = queue_pop_head(&cpuQueue);
     queue_insert_tail(&cpuQueue, head);
+    pthread_mutex_unlock(&cpuLock);
     
     struct cpuTask *toSwap = (struct cpuTask *) (head->data);
     swapcontext(&toSwap->context, &main);
@@ -155,7 +170,10 @@ void sut_yield() {
 
 //only difference is that when a cpuTask calls exit, we dont add it to the queue
 void sut_exit() {
+    pthread_mutex_lock(&cpuLock);
     struct queue_entry *head = queue_pop_head(&cpuQueue);
+    pthread_mutex_unlock(&cpuLock);
+    
     struct cpuTask *toSwap = (struct cpuTask *) (head->data);
     //frees memory as we dont need those pointers anymore - the task is finished
     free(head);
@@ -187,9 +205,14 @@ void sut_open(char *dest, int port) {
     ioTask->taskType = 3;
     ioTask->firstArg = dest;
     ioTask->secondArg = port;
+    pthread_mutex_lock(&cpuLock);
     ioTask->cpuEntry = queue_peek_front(&cpuQueue);
+    pthread_mutex_unlock(&cpuLock);
     
+    pthread_mutex_lock(&ioLock);
     queue_insert_tail(&ioQueue, queue_new_node(ioTask));
+    pthread_mutex_unlock(&ioLock);
+    
 }
 
 void sut_write(char *buf, int size) {
@@ -200,10 +223,16 @@ void sut_write(char *buf, int size) {
     ioTask->taskType = 2;
     ioTask->firstArg = buf;
     ioTask->secondArg = size;
+    pthread_mutex_lock(&cpuLock);
     ioTask->cpuEntry = queue_peek_front(&cpuQueue);
+    pthread_mutex_unlock(&cpuLock);
     
+    pthread_mutex_lock(&ioLock);
     queue_insert_tail(&ioQueue, queue_new_node(ioTask));
+    pthread_mutex_unlock(&ioLock);
+    
 }
+
 
 void sut_close() {
     close(socketFd); //this will close connection between server and SUT. it will also terminate the server.
@@ -216,14 +245,20 @@ char *sut_read() {
     struct ioTask *ioTask;
     ioTask = malloc(sizeof(struct ioTask));
     
+    pthread_mutex_lock(&cpuLock);
     struct queue_entry *cpu = queue_pop_head(&cpuQueue);
+    pthread_mutex_unlock(&cpuLock);
+    
     ioTask->ioTaskId = ioTaskCounter++;
     ioTask->taskType = 1;
     ioTask->firstArg = (char *) malloc(READSIZE);
     ioTask->secondArg = sizeof(ioTask->firstArg);
     ioTask->cpuEntry = cpu;
     
+    pthread_mutex_lock(&ioLock);
     queue_insert_tail(&ioQueue, queue_new_node(ioTask));
+    pthread_mutex_unlock(&ioLock);
+    
     struct cpuTask *t = (struct cpuTask *) cpu->data;
     
     swapcontext(&t->context, &main);
