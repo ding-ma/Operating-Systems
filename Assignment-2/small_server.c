@@ -1,6 +1,6 @@
 #include <stdio.h>
 #include <string.h>
-# include <time.h>
+#include <time.h>
 #include "socket_lib.h"
 #include <unistd.h>
 
