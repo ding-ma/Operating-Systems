@@ -9,7 +9,7 @@ void hello1() {
     for (i = 0; i < 100; i++) {
         sprintf(sbuf, "Hello world!, message from SUT-One i = %d \n", i);
         sut_write(sbuf, strlen(sbuf));
-        sut_yield();
+//        sut_yield();
     }
     sut_close();
     sut_exit();
@@ -27,6 +27,6 @@ void hello2() {
 int main() {
     sut_init();
     sut_create(hello1);
-    sut_create(hello2);
+    // sut_create(hello2);
     sut_shutdown();
 }
