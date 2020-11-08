@@ -20,7 +20,7 @@
  */
 
 /* Includes */
-#include "sma.h"    // Please add any libraries you plan to use inside this file
+#include "sma.h" // Please add any libraries you plan to use inside this file
 
 /* Definitions*/
 #define MAX_TOP_FREE (128 * 1024)                                // Max top free block size = 128 Kbytes
@@ -94,11 +94,11 @@ void *sma_malloc(int size) {
 void sma_free(void *ptr) {
     //	Checks if the ptr is NULL
     if (ptr == NULL) {
-        puts("Error: Attempting to free NULL!\n");
+        puts("Error: Attempting to free NULL!");
     }
         //	Checks if the ptr is beyond Program Break
     else if (ptr > sbrk(0)) {
-        puts("Error: Attempting to free unallocated space!\n");
+        puts("Error: Attempting to free unallocated space!");
     } else {
         //	Adds the block to the free memory list
         add_block_freeList(ptr);
@@ -129,10 +129,15 @@ void sma_mallopt(int policy) {
 void sma_mallinfo() {
     //	Finds the largest Contiguous Free Space (should be the largest free block)
     int largestFreeBlock = get_largest_freeBlock();
+    char str[60];
     
-    puts("Total number of bytes allocated: %lu\n", totalAllocatedSize);
-    puts("Total free space: %lu\n", totalFreeSize);
-    puts("Size of largest contigious free space (in bytes): %d\n", largestFreeBlock);
+    //	Prints the SMA Stats
+    sprintf(str, "Total number of bytes allocated: %lu", totalAllocatedSize);
+    puts(str);
+    sprintf(str, "Total free space: %lu", totalFreeSize);
+    puts(str);
+    sprintf(str, "Size of largest contigious free space (in bytes): %d", largestFreeBlock);
+    puts(str);
 }
 
 /*
@@ -166,7 +171,7 @@ void *sma_realloc(void *ptr, int size) {
  * 	Description:	Allocates memory by increasing the Program Break
  */
 void *allocate_pBrk(int size) {
-    void *newBlock;
+    void *newBlock = NULL;
     int excessSize;
     
     //	TODO: 	Allocate memory by incrementing the Program Break by calling sbrk() or brk()
@@ -186,7 +191,7 @@ void *allocate_pBrk(int size) {
  * 	Description:	Allocates memory from the free memory list
  */
 void *allocate_freeList(int size) {
-    void *pMemory;
+    void *pMemory = NULL;
     
     if (currentPolicy == WORST) {
         // Allocates memory using Worst Fit Policy
@@ -195,7 +200,7 @@ void *allocate_freeList(int size) {
         // Allocates memory using Next Fit Policy
         pMemory = allocate_next_fit(size);
     } else {
-        return NULL;
+        pMemory = NULL;
     }
     
     return pMemory;
@@ -208,7 +213,7 @@ void *allocate_freeList(int size) {
  * 	Description:	Allocates memory using Worst Fit from the free memory list
  */
 void *allocate_worst_fit(int size) {
-    void *worstBlock;
+    void *worstBlock = NULL;
     int excessSize;
     int blockFound = 0;
     
@@ -234,7 +239,7 @@ void *allocate_worst_fit(int size) {
  * 	Description:	Allocates memory using Next Fit from the free memory list
  */
 void *allocate_next_fit(int size) {
-    void *nextBlock;
+    void *nextBlock = NULL;
     int excessSize;
     int blockFound = 0;
     
