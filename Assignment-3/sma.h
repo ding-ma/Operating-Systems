@@ -72,4 +72,4 @@ int getTagSize(int ptr);
 
 int createNewTag(int len, int free);
 
-int getTagFree(int ptr);
+int isTagFree(int ptr);

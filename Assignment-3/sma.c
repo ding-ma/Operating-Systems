@@ -46,6 +46,7 @@ struct memBlock *freeListTail = NULL;              //	The pointer to the TAIL of
 unsigned long totalAllocatedSize = 0; //	Total Allocated memory in Bytes
 unsigned long totalFreeSize = 0;      //	Total Free memory in Bytes in the free memory list
 Policy currentPolicy = WORST;          //	Current Policy
+struct memBlock *lastCreatedBlock = NULL;
 //	TODO: Add any global variables here
 
 
@@ -201,8 +202,8 @@ void *allocate_pBrk(int size) {
     
     //going with 16kb chunks as the tests are doing 32kbs. We want to minmize the number of time we call sbrk
     int numberBlockToCreate = size % MALLOC_SIZE;
-    newBlock = sbrk(numberBlockToCreate * MALLOC_SIZE + MALLOC_SIZE + excessSize);
-    
+    int sizeToIncrease = numberBlockToCreate * MALLOC_SIZE + MALLOC_SIZE;
+    newBlock = sbrk(sizeToIncrease + excessSize);
     
     //	TODO: 	Allocate memory by incrementing the Program Break by calling sbrk() or brk()
     //	Hint:	Getting an exact "size" of memory might not be the best idea. Why?
@@ -246,12 +247,27 @@ void *allocate_worst_fit(int size) {
     void *worstBlock = NULL;
     int excessSize;
     int blockFound = 0;
-    
     //	TODO: 	Allocate memory by using Worst Fit Policy
     //	Hint:	Start off with the freeListHead and iterate through the entire list to get the largest block
     
+    int largestSize = get_largest_freeBlock();
+    blockFound = largestSize > size;
+    
     //	Checks if appropriate block is found.
     if (blockFound) {
+        //since we know there is a larger block, we will iterate through the list to find its address
+        
+        struct memBlock *tmp = freeListHead;
+        while (tmp != NULL) {
+            if (get_blockSize(tmp) == largestSize) {
+                worstBlock = (void *) tmp;
+                break;
+            }
+            tmp = tmp->next;
+        }
+        
+        excessSize = largestSize - size;
+        
         //	Allocates the Memory Block
         allocate_block(worstBlock, size, excessSize, 1);
     } else {
@@ -484,7 +500,7 @@ int createNewTag(int len, int free) {
     return ((len << 1) + (free == 1 ? 0b0 : 0b1));
 }
 
-int getTagFree(int ptr) {
+int isTagFree(int ptr) {
     return ptr & 0b1;
 }
 
