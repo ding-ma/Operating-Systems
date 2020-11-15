@@ -28,7 +28,7 @@
 #define WORST_FIT    1
 #define NEXT_FIT    2
 
-extern char sma_malloc_error[1024];
+extern char *sma_malloc_error;
 
 //  Public Functions declaration
 void *sma_malloc(int size);
@@ -50,7 +50,7 @@ static void *allocate_worst_fit(int size);
 
 static void *allocate_next_fit(int size);
 
-static void allocate_block(void *startOfNewBlock, int size, int excessSize, int fromFreeList);
+static void allocate_block(void *newBlock, int size, int excessSize, int fromFreeList);
 
 static void replace_block_freeList(void *oldBlock, void *newBlock);
 
@@ -61,15 +61,4 @@ static void remove_block_freeList(void *block);
 static int get_blockSize(void *ptr);
 
 static int get_largest_freeBlock();
-
 //  TODO: Declare any private functions that you intend to add in your code.
-
-char *incrementPtr(int *ptr, int length);
-
-char *decrementPtr(int *ptr, int length);
-
-int getTagSize(int ptr);
-
-int createNewTag(int len, int free);
-
-int isTagFree(int ptr);
