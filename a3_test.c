@@ -48,6 +48,7 @@ int main(int argc, char *argv[]) {
 
     // Now deallocating some of the slots ..to free
     for (i = 10; i < 18; i++) {
+        puts("----------------------------------");
         sma_free(c[i]);
         // sprintf(str, "Freeing c[i]: %p", c[i]);
         // puts(str);

@@ -435,13 +435,12 @@ void mergeCells(){
 
     while (itr != endOfMemory){
         //if both adjacent are free we can merge them
-        sprintf(debug, "current %d, next %d",getIsMemoryFree(itr),getIsMemoryFree(getNextMemoryLocation(itr)) );
-        puts(debug);
+//        sprintf(debug, "current %d, next %d, size of curr %d",getIsMemoryFree(itr),getIsMemoryFree(getNextMemoryLocation(itr)),getSizeOfMemory(itr) );
+//        puts(debug);
         if (getIsMemoryFree(itr) && getIsMemoryFree(getNextMemoryLocation(itr))){
             int currentBlockSize = getSizeOfMemory(itr);
             int nextBlockSize = getSizeOfMemory(getNextMemoryLocation(itr));
-//            sprintf(debug, "some locations %d, %d", currentBlockSize, nextBlockSize);
-//            puts(debug);
+            setSizeOfMemory(itr, currentBlockSize+nextBlockSize+HEADER_SIZE);
         }
         itr = getNextMemoryLocation(itr);
     }
@@ -466,7 +465,7 @@ void add_block_freeList(int *block) {
     
 //    sprintf(debug, "curr location %p end of block %p", block, endOfMemory);
 //    puts(debug);
-//    mergeCells();
+    mergeCells();
     //	Updates SMA info
     totalAllocatedSize -= getSizeOfMemory(block);
     totalFreeSize += getSizeOfMemory(block);
