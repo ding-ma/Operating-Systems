@@ -36,8 +36,8 @@ typedef enum //	Policy type definition
 } Policy;
 
 char *sma_malloc_error;
-void *startOfMemory = NULL;              //	The pointer to the HEAD of the doubly linked free memory list
-void *endOfMemory = NULL;              //	The pointer to the TAIL of the doubly linked free memory list
+int *startOfMemory = NULL;              //	The pointer to the HEAD of the doubly linked free memory list
+int *endOfMemory = NULL;              //	The pointer to the TAIL of the doubly linked free memory list
 unsigned long totalAllocatedSize = 0; //	Total Allocated memory in Bytes
 unsigned long totalFreeSize = 0;      //	Total Free memory in Bytes in the free memory list
 Policy currentPolicy = WORST;          //	Current Policy
@@ -96,12 +96,10 @@ void *sma_malloc(int size) {
         // Allocate memory by increasing the Program Break
         sbrk(100);
         pMemory = allocate_pBrk(size);
-    }
-        // If free list is not empty
-    else {
+    } else { // If free list is not empty
+   
         // Allocate memory from the free memory list
         pMemory = allocate_freeList(size);
-        
         // If a valid memory could NOT be allocated from the free memory list
         if (pMemory == (void *) -2) {
             // Allocate memory by increasing the Program Break
@@ -222,6 +220,7 @@ void *allocate_pBrk(int size) {
     if (startOfMemory == NULL){
         startOfMemory = newBlock;
     }
+    endOfMemory = getNextMemoryLocation(newBlock);
     
     allocate_block(newBlock, size, excessSize, 0);
     
@@ -257,15 +256,30 @@ void *allocate_freeList(int size) {
  * 	Description:	Allocates memory using Worst Fit from the free memory list
  */
 void *allocate_worst_fit(int size) {
-    void *worstBlock = NULL;
+    int *worstBlock = NULL;
     int excessSize;
-    int blockFound = 0;
+    int blockFound;
     
     //	TODO: 	Allocate memory by using Worst Fit Policy
     //	Hint:	Start off with the freeListHead and iterate through the entire list to
     //			get the largest block
     
     //	Checks if appropriate block is found.
+    int *itr = startOfMemory;
+    int biggestSize = 0;
+    while (itr != endOfMemory){
+        itr = getNextMemoryLocation(itr);
+        if (getSizeOfMemory(itr) > biggestSize){
+            biggestSize = getSizeOfMemory(itr);
+        }
+    }
+    worstBlock = itr;
+    blockFound = biggestSize > size;
+    excessSize = biggestSize - size - HEADER_SIZE;
+    newTag(worstBlock, size,0);
+//    sprintf(debug, "allocating from free blocks block location %p", worstBlock);
+//    puts(debug);
+    
     if (blockFound) {
         //	Allocates the Memory Block
         allocate_block(worstBlock, size, excessSize, 1);
@@ -328,8 +342,10 @@ void allocate_block(int *newBlock, int size, int excessSize, int fromFreeList) {
         //	TODO: Create a free block using the excess memory size, then assign it to the Excess Free Block
         
         excessFreeBlock = getNextMemoryLocation(newBlock);
-        newTag(excessFreeBlock, size,1);
+        newTag(excessFreeBlock, excessSize,1);
         
+//        sprintf(debug, "old location %p \nstart %p \nlocation %p, size %d isFree %d", newBlock,startOfMemory,excessFreeBlock, getSizeOfMemory(excessFreeBlock), getIsMemoryFree(excessFreeBlock));
+//        puts(debug);
         
         //	Checks if the new block was allocated from the free memory list
         if (fromFreeList) {
@@ -380,7 +396,6 @@ void add_block_freeList(int *block) {
     //			Merging would be tideous. Check adjacent blocks, then also check if the merged
     //			block is at the top and is bigger than the largest free block allowed (128kB).
     
-    endOfMemory = block;
     setIsMemoryFree(block, 1);
     
     //	Updates SMA info

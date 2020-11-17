@@ -83,79 +83,80 @@ int main(int argc, char *argv[]) {
     else
         puts("\t\t\t\t FAILED\n");
 
-//    // Test 3: Worst Fit Test
-//    puts("Test 3: Check for Worst Fit algorithm...");
-//    // Sets Policy to Worst Fit
-//    sma_mallopt(WORST_FIT);
-//
-//    // Allocating 512 kbytes of memory..
-//    for (i = 0; i < 32; i++)
-//        c2[i] = (int *) sma_malloc(16 * 1024);
-//
-//    // Now deallocating some of the slots ..to free
-//    // One chunk of 5x16 kbytes
-//    sma_free(c2[31]);
-//    sma_free(c2[30]);
-//    sma_free(c2[29]);
-//    sma_free(c2[28]);
-//    sma_free(c2[27]);
-//
-//    // One chunk of 3x16 kbytes
-//    sma_free(c2[25]);
-//    sma_free(c2[24]);
-//    sma_free(c2[23]);
-//
-//    // One chunk of 2x16 kbytes
-//    sma_free(c2[20]);
-//    sma_free(c2[19]);
-//
-//    // One chunk of 3x16 kbytes
-//    sma_free(c2[10]);
-//    sma_free(c2[9]);
-//    sma_free(c2[8]);
-//
-//    // One chunk of 2x16 kbytes
-//    sma_free(c2[5]);
-//    sma_free(c2[4]);
-//
-//    int *cp2 = (int *) sma_malloc(16 * 1024 * 2);
-//
-//    // Testing if the correct hole has been allocated
-//    if (cp2 != NULL) {
-//        if (cp2 == c2[27] || cp2 == c2[28] || cp2 == c2[29] || cp2 == c2[30])
-//            puts("\t\t\t\t PASSED\n");
-//        else
-//            puts("\t\t\t\t FAILED\n");
-//    } else {
-//        puts("\t\t\t\t FAILED\n");
-//    }
-//
-//    //	Freeing cp2
-//    sma_free(cp2);
-//
-//    // Test 4: Next Fit Test
-//    puts("Test 4: Check for Next Fit algorithm...");
-//    // Sets Policy to Next Fit
-//    sma_mallopt(NEXT_FIT);
-//
-//    int *cp3 = (int *) sma_malloc(16 * 1024 * 3);
-//    int *cp4 = (int *) sma_malloc(16 * 1024 * 2);
-//
-//    // Testing if the correct holes have been allocated
-//    if (cp3 == c2[8] && cp3 != NULL) {
-//        if (cp4 == c2[19]) {
-//            // sprintf(str, "C[19]: %p", c[19]);
-//            // puts(str);
-//            // sprintf(str, "CP4: %p", cp4);
-//            // puts(str);
-//            puts("\t\t\t\t PASSED\n");
-//        } else {
-//            puts("\t\t\t\t FAILED\n");
-//        }
-//    } else {
-//        puts("\t\t\t\t FAILED\n");
-//    }
-//
+    // Test 3: Worst Fit Test
+    puts("Test 3: Check for Worst Fit algorithm...");
+    // Sets Policy to Worst Fit
+    sma_mallopt(WORST_FIT);
+
+    // Allocating 512 kbytes of memory..
+    for (i = 0; i < 32; i++)
+        c2[i] = (int *) sma_malloc(16 * 1024);
+
+    // Now deallocating some of the slots ..to free
+    // One chunk of 5x16 kbytes
+    sma_free(c2[31]);
+    sma_free(c2[30]);
+    sma_free(c2[29]);
+    sma_free(c2[28]);
+    sma_free(c2[27]);
+
+    // One chunk of 3x16 kbytes
+    sma_free(c2[25]);
+    sma_free(c2[24]);
+    sma_free(c2[23]);
+
+    // One chunk of 2x16 kbytes
+    sma_free(c2[20]);
+    sma_free(c2[19]);
+
+    // One chunk of 3x16 kbytes
+    sma_free(c2[10]);
+    sma_free(c2[9]);
+    sma_free(c2[8]);
+
+    // One chunk of 2x16 kbytes
+    sma_free(c2[5]);
+    sma_free(c2[4]);
+
+    int *cp2 = (int *) sma_malloc(16 * 1024 * 2);
+
+    // Testing if the correct hole has been allocated
+    if (cp2 != NULL) {
+        if (cp2 == c2[27] || cp2 == c2[28] || cp2 == c2[29] || cp2 == c2[30])
+            puts("\t\t\t\t PASSED\n");
+        else
+            puts("\t\t\t\t FAILED\n");
+    } else {
+        puts("\t\t\t\t FAILED\n");
+    }
+
+    //	Freeing cp2
+    sma_free(cp2);
+    
+
+    // Test 4: Next Fit Test
+    puts("Test 4: Check for Next Fit algorithm...");
+    // Sets Policy to Next Fit
+    sma_mallopt(NEXT_FIT);
+
+    int *cp3 = (int *) sma_malloc(16 * 1024 * 3);
+    int *cp4 = (int *) sma_malloc(16 * 1024 * 2);
+
+    // Testing if the correct holes have been allocated
+    if (cp3 == c2[8] && cp3 != NULL) {
+        if (cp4 == c2[19]) {
+            // sprintf(str, "C[19]: %p", c[19]);
+            // puts(str);
+            // sprintf(str, "CP4: %p", cp4);
+            // puts(str);
+            puts("\t\t\t\t PASSED\n");
+        } else {
+            puts("\t\t\t\t FAILED\n");
+        }
+    } else {
+        puts("\t\t\t\t FAILED\n");
+    }
+
 //    // Test 5: Realloc test (with Next Fit)
 //    puts("Test 5: Check for Reallocation with Next Fit...");
 //    // Writes some value pointed by the pointer
