@@ -75,6 +75,18 @@ void newTag(int *ptr, int sizeOfMemory, int isFree){
     setIsMemoryFree(ptr,isFree);
 }
 
+
+//int *getPreviousMemoryLocation(int *ptr){
+//    int *itr = startOfMemory;
+//    while (itr != endOfMemory){
+//        if (getNextMemoryLocation(itr) == ptr){
+//            return itr;
+//        }
+//        itr = getNextMemoryLocation(itr);
+//    }
+//    return NULL;
+//}
+
 /*
  * =====================================================================================
  *	Public Functions for SMA
@@ -88,6 +100,7 @@ void newTag(int *ptr, int sizeOfMemory, int isFree){
  * 	Description:	Allocates a memory block of input size from the heap, and returns a 
  * 					pointer pointing to it. Returns NULL if failed and sets a global error.
  */
+int i= 0;
 void *sma_malloc(int size) {
     void *pMemory = NULL;
     
@@ -96,6 +109,7 @@ void *sma_malloc(int size) {
         // Allocate memory by increasing the Program Break
         sbrk(100);
         pMemory = allocate_pBrk(size);
+        i++;
     } else { // If free list is not empty
    
         // Allocate memory from the free memory list
@@ -104,6 +118,7 @@ void *sma_malloc(int size) {
         if (pMemory == (void *) -2) {
             // Allocate memory by increasing the Program Break
             pMemory = allocate_pBrk(size);
+            i++;
         }
     }
     
@@ -172,6 +187,9 @@ void sma_mallinfo() {
     puts(str);
     sprintf(str, "Size of largest contigious free space (in bytes): %d", largestFreeBlock);
     puts(str);
+    
+    sprintf(debug, "sbrk called number called %d", i);
+    puts(debug);
 }
 
 /*
@@ -220,9 +238,10 @@ void *allocate_pBrk(int size) {
     if (startOfMemory == NULL){
         startOfMemory = newBlock;
     }
-    endOfMemory = getNextMemoryLocation(newBlock);
     
-    allocate_block(newBlock, size, excessSize, 0);
+    endOfMemory = getNextMemoryLocation(newBlock);
+    newTag(endOfMemory,excessSize,1);
+//    allocate_block(newBlock, size, excessSize, 0);
     
     return newBlock;
 }
@@ -260,29 +279,56 @@ void *allocate_worst_fit(int size) {
     int excessSize;
     int blockFound;
     
+    int largestBlock = get_largest_freeBlock();
+    blockFound = largestBlock > size;
     //	TODO: 	Allocate memory by using Worst Fit Policy
     //	Hint:	Start off with the freeListHead and iterate through the entire list to
     //			get the largest block
     
     //	Checks if appropriate block is found.
-    int *itr = startOfMemory;
-    int biggestSize = 0;
-    while (itr != endOfMemory){
-        itr = getNextMemoryLocation(itr);
-        if (getSizeOfMemory(itr) > biggestSize){
-            biggestSize = getSizeOfMemory(itr);
-        }
-    }
-    worstBlock = itr;
-    blockFound = biggestSize > size;
-    excessSize = biggestSize - size - HEADER_SIZE;
-    newTag(worstBlock, size,0);
-//    sprintf(debug, "allocating from free blocks block location %p", worstBlock);
+//    int *itr = startOfMemory;
+//    int biggestSize = 0;
+//    while (1){
+//        if (getSizeOfMemory(itr) > biggestSize){
+//            biggestSize = getSizeOfMemory(itr);
+//        }
+//        itr = getNextMemoryLocation(itr);
+//
+//        if (itr != endOfMemory){
+//            if (getSizeOfMemory(itr) > biggestSize){
+//                biggestSize = getSizeOfMemory(itr);
+//            }
+//            break;
+//        }
+//    }
+//
+//    worstBlock = itr;
+//    blockFound = biggestSize > size;
+//    excessSize = biggestSize - size - HEADER_SIZE;
+//
+//
+//    sprintf(debug, "allocating from free blocks block location %p next block is at %p end %p", worstBlock, getNextMemoryLocation(worstBlock), endOfMemory);
 //    puts(debug);
-    
+
     if (blockFound) {
+        int *itr = startOfMemory;
+        while (1){
+            if (getSizeOfMemory(itr) == largestBlock){
+                break;
+            }
+            itr = getNextMemoryLocation(itr);
+        }
+        newTag(itr,size,0);
+        worstBlock = itr;
+        
+        int *newChunk = getNextMemoryLocation(itr);
+        newTag(newChunk, largestBlock-HEADER_SIZE-size, 1);
+        if (newChunk > endOfMemory){
+            endOfMemory = newChunk;
+        }
+//        newTag(worstBlock, size,0);
         //	Allocates the Memory Block
-        allocate_block(worstBlock, size, excessSize, 1);
+//        allocate_block(worstBlock, size, excessSize, 1);
     } else {
         //	Assigns invalid address if appropriate block not found in free list
         worstBlock = (void *) -2;
@@ -342,7 +388,7 @@ void allocate_block(int *newBlock, int size, int excessSize, int fromFreeList) {
         //	TODO: Create a free block using the excess memory size, then assign it to the Excess Free Block
         
         excessFreeBlock = getNextMemoryLocation(newBlock);
-        newTag(excessFreeBlock, excessSize,1);
+        newTag(excessFreeBlock, size,1);
         
 //        sprintf(debug, "old location %p \nstart %p \nlocation %p, size %d isFree %d", newBlock,startOfMemory,excessFreeBlock, getSizeOfMemory(excessFreeBlock), getIsMemoryFree(excessFreeBlock));
 //        puts(debug);
@@ -378,8 +424,28 @@ void replace_block_freeList(void *oldBlock, void *newBlock) {
     //	TODO: Replace the old block with the new block
     
     //	Updates SMA info
-    totalAllocatedSize += (get_blockSize(oldBlock) - get_blockSize(newBlock));
-    totalFreeSize += (get_blockSize(newBlock) - get_blockSize(oldBlock));
+    totalAllocatedSize += (getSizeOfMemory(oldBlock) - getSizeOfMemory(newBlock));
+    totalFreeSize += (getSizeOfMemory(newBlock) - getSizeOfMemory(oldBlock));
+}
+
+
+void mergeCells(){
+    int *itr = startOfMemory;
+    
+
+    while (itr != endOfMemory){
+        //if both adjacent are free we can merge them
+        sprintf(debug, "current %d, next %d",getIsMemoryFree(itr),getIsMemoryFree(getNextMemoryLocation(itr)) );
+        puts(debug);
+        if (getIsMemoryFree(itr) && getIsMemoryFree(getNextMemoryLocation(itr))){
+            int currentBlockSize = getSizeOfMemory(itr);
+            int nextBlockSize = getSizeOfMemory(getNextMemoryLocation(itr));
+//            sprintf(debug, "some locations %d, %d", currentBlockSize, nextBlockSize);
+//            puts(debug);
+        }
+        itr = getNextMemoryLocation(itr);
+    }
+
 }
 
 /*
@@ -398,6 +464,9 @@ void add_block_freeList(int *block) {
     
     setIsMemoryFree(block, 1);
     
+//    sprintf(debug, "curr location %p end of block %p", block, endOfMemory);
+//    puts(debug);
+//    mergeCells();
     //	Updates SMA info
     totalAllocatedSize -= getSizeOfMemory(block);
     totalFreeSize += getSizeOfMemory(block);
@@ -414,27 +483,12 @@ void remove_block_freeList(void *block) {
     //	Hint: 	You need to update the pointers in the free blocks before and after this block.
     //			You also need to remove any TAG in the free block.
     
+    setIsMemoryFree(block, 0);
     //	Updates SMA info
-    totalAllocatedSize += get_blockSize(block);
-    totalFreeSize -= get_blockSize(block);
+    totalAllocatedSize += getSizeOfMemory(block);
+    totalFreeSize -= getSizeOfMemory(block);
 }
 
-/*
- *	Funcation Name: get_blockSize
- *	Input type:		void*
- * 	Output type:	int
- * 	Description:	Extracts the Block Size
- */
-int get_blockSize(void *ptr) {
-    int *pSize;
-    
-    //	Points to the address where the Length of the block is stored
-    pSize = (int *) ptr;
-    pSize--;
-    
-    //	Returns the deferenced size
-    return *(int *) pSize;
-}
 
 /*
  *	Funcation Name: get_largest_freeBlock
@@ -444,8 +498,22 @@ int get_blockSize(void *ptr) {
  */
 int get_largest_freeBlock() {
     int largestBlockSize = 0;
+    int numberBlocks = 0;
+    int *itr = startOfMemory;
+    while (1){
+        if (getIsMemoryFree(itr) && getSizeOfMemory(itr)>largestBlockSize){
+            largestBlockSize = getSizeOfMemory(itr);
+            if (itr == endOfMemory){
+                break;
+            }
+        }
+        itr = getNextMemoryLocation(itr);
+        
+        numberBlocks++;
+       
+    }
     
-    //	TODO: Iterate through the Free Block List to find the largest free block and return its size
-    
+    sprintf(debug, "total number of blocks %d", numberBlocks);
+    puts(debug);
     return largestBlockSize;
 }
