@@ -143,11 +143,8 @@ int main(int argc, char *argv[]) {
 
     int *cp3 = (int *) sma_malloc(16 * 1024 * 3);
     int *cp4 = (int *) sma_malloc(16 * 1024 * 2);
-
-//    sprintf(str,"memlocation of c2.8 %p", c2[8]);
-//    puts(str);
-//    sprintf(str,"memlocation of c2.19 %p", c2[19]);
-//    puts(str);
+    
+    
     // Testing if the correct holes have been allocated
     if (cp3 == c2[8] && cp3 != NULL) {
         if (cp4 == c2[19]) {
@@ -163,56 +160,56 @@ int main(int argc, char *argv[]) {
         puts("\t\t\t\t FAILED\n");
     }
     
-        // Test 2: Program Break expansion Test
-    puts("Test 2: Program break expansion test...");
-    sma_mallopt(WORST_FIT);
-    count = 0;
-    for (i = 1; i < 40; i++) {
-        sprintf(str, "%d", i);
-        limitbefore = sbrk(0);
-        ptr = sma_malloc(1024 * 32 * i);
-        limitafter = sbrk(0);
-
-        if (limitafter > limitbefore)
-            count++;
-       
+    
+    // Test 5: Realloc test (with Next Fit)
+    puts("Test 5: Check for Reallocation with Next Fit...");
+    // Writes some value pointed by the pointer
+    if (cp3 != NULL && cp4 != NULL) {
+        *cp3 = 427;
+        *cp4 = 310;
     }
-
-    // Testing if the program breaks are incremented correctly
-    if (count > 0 && count < 40)
-        puts("\t\t\t\t PASSED\n");
-    else
+    
+    // Calling realloc
+    cp3 = (int *) sma_realloc(cp3, 16 * 1024 * 5);
+    cp4 = (int *) sma_realloc(cp4, 16 * 1024 * 3);
+    
+    if (cp3 == c2[27] && cp3 != NULL && cp4 == c2[8] && cp4 != NULL) {
+        //	Test the Data stored in the memory blocks
+        if (*cp3 == 427 && *cp4 == 310) {
+            puts("\t\t\t\t PASSED\n");
+        } else {
+            puts("\t\t\t\t FAILED\n");
+        }
+    } else {
         puts("\t\t\t\t FAILED\n");
-
-//    // Test 5: Realloc test (with Next Fit)
-//    puts("Test 5: Check for Reallocation with Next Fit...");
-//    // Writes some value pointed by the pointer
-//    if (cp3 != NULL && cp4 != NULL) {
-//        *cp3 = 427;
-//        *cp4 = 310;
+    }
+    
+    
+    
+//    // Test 2: Program Break expansion Test
+//    puts("Test 2: Program break expansion test...");
+//    sma_mallopt(WORST_FIT);
+//    count = 0;
+//    for (i = 1; i < 40; i++) {
+//        sprintf(str, "%d", i);
+//        limitbefore = sbrk(0);
+//        ptr = sma_malloc(1024 * 32 * i);
+//        limitafter = sbrk(0);
+//
+//        if (limitafter > limitbefore)
+//            count++;
+//
 //    }
-//    // Calling realloc
-//    cp3 = (int *) sma_realloc(cp3, 16 * 1024 * 5);
-//    cp4 = (int *) sma_realloc(cp4, 16 * 1024 * 3);
 //
-//    sprintf(str, "location of cp3 %p and c2.27 %p difference %ld", cp3, c2[27], cp3-c2[27]);
-//    puts(str);
-//
-//
-//    sprintf(str, "location of cp4 %p and c2.8 %p difference %ld", cp4, c2[8], cp4-c2[8]);
-//    puts(str);
-//
-//    if (cp3 == c2[27] && cp3 != NULL && cp4 == c2[8] && cp4 != NULL) {
-//        //	Test the Data stored in the memory blocks
-//        if (*cp3 == 427 && *cp4 == 310) {
-//            puts("\t\t\t\t PASSED\n");
-//        } else {
-//            puts("\t\t\t\t FAILED\n");
-//        }
-//    } else {
+//    // Testing if the program breaks are incremented correctly
+//    if (count > 0 && count < 40)
+//        puts("\t\t\t\t PASSED\n");
+//    else
 //        puts("\t\t\t\t FAILED\n");
-//    }
-
+//
+//
+    
+    
     //	Test 6: Print Stats
     puts("Test 6: Print SMA Statistics...");
     puts("===============================");

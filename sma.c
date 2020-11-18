@@ -77,16 +77,16 @@ void newTag(int *ptr, int sizeOfMemory, int isFree) {
 }
 
 
-//int *getPreviousMemoryLocation(int *ptr){
-//    int *itr = startOfMemory;
-//    while (itr != endOfMemory){
-//        if (getNextMemoryLocation(itr) == ptr){
-//            return itr;
-//        }
-//        itr = getNextMemoryLocation(itr);
-//    }
-//    return NULL;
-//}
+int *getPreviousMemoryLocation(int *ptr){
+    int *itr = startOfMemory;
+    while (itr != endOfMemory){
+        if (getNextMemoryLocation(itr) == ptr){
+            return itr;
+        }
+        itr = getNextMemoryLocation(itr);
+    }
+    return NULL;
+}
 
 /*
  * =====================================================================================
@@ -217,8 +217,9 @@ void *sma_realloc(void *ptr, int size) {
     if (size < 0 || ptr == NULL){
         return mem;
     }
-
-
+//    int a = getSizeOfMemory(getPreviousMemoryLocation(getNextMemoryLocation(ptr)));
+//    int b = getSizeOfMemory(ptr);
+    
     if(getSizeOfMemory(ptr) > size) {
         //assign it
     }
@@ -387,7 +388,12 @@ void *allocate_next_fit(int size) {
         if (itr > endOfMemory) {
             itr = startOfMemory;
         }
+        
         itr = getNextMemoryLocation(itr);
+        
+        if (itr == lastMemory){
+            break;
+        }
     }
 
 
