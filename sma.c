@@ -24,7 +24,7 @@
 
 /* Definitions*/
 #define ONE_BYTE 1024
-#define MAX_TOP_FREE (128 * ONE_BYTE) // Max top free block size = 128 Kbytes
+#define MAX_TOP_FREE (128 *  ONE_BYTE) // Max top free block size = 128 Kbytes
 //	TODO: Change the Header size if required
 #define HEADER_SIZE (2*sizeof(int)) // Size of the Header in a free memory block
 //	TODO: Add constants here
@@ -299,6 +299,10 @@ void *allocate_worst_fit(int size) {
     int blockFound;
     
     int largestBlock = get_largest_freeBlock();
+    
+    sprintf(debug, "size of worse block %d", largestBlock/ONE_BYTE);
+    puts(debug);
+    
     blockFound = largestBlock > size;
     //	TODO: 	Allocate memory by using Worst Fit Policy
     //	Hint:	Start off with the freeListHead and iterate through the entire list to
@@ -399,11 +403,11 @@ void *allocate_next_fit(int size) {
         int sizeOfBlock = getSizeOfMemory(itr);
         int excess = sizeOfBlock - size - HEADER_SIZE;
 
-        if (excess < 8) {
+        if (excess >10) {
             newTag(nextBlock, size, 0);
             newTag(getNextMemoryLocation(nextBlock), excess,1);
         } else {
-            setIsMemoryFree(itr, 0);
+            newTag(nextBlock, size+8, 0);
         }
 
 //        sprintf(debug, "memory size %d, location %p excess %d", getSizeOfMemory(itr), itr, excess);
@@ -494,6 +498,8 @@ void mergeCells() {
         if (getIsMemoryFree(itr) && getIsMemoryFree(getNextMemoryLocation(itr))) {
             int currentBlockSize = getSizeOfMemory(itr);
             int nextBlockSize = getSizeOfMemory(getNextMemoryLocation(itr));
+            sprintf(debug, "current %d, next %d, next one %d",currentBlockSize,nextBlockSize, currentBlockSize+nextBlockSize);
+            puts(debug);
             setSizeOfMemory(itr, currentBlockSize + nextBlockSize + HEADER_SIZE);
         }
         if (itr >= endOfMemory) {
@@ -502,7 +508,10 @@ void mergeCells() {
         itr = getNextMemoryLocation(itr);
 
     }
-    
+    if (getSizeOfMemory(itr) > MAX_TOP_FREE){
+        sbrk(MAX_TOP_FREE - getSizeOfMemory(itr));
+    }
+
 }
 
 /*
