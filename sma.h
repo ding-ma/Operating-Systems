@@ -28,7 +28,7 @@
 #define WORST_FIT    1
 #define NEXT_FIT    2
 
-extern char *sma_malloc_error;
+extern char sma_malloc_error[100];
 
 //  Public Functions declaration
 void *sma_malloc(int size);
@@ -50,10 +50,6 @@ static void *allocate_worst_fit(int size);
 
 static void *allocate_next_fit(int size);
 
-static void allocate_block(int *newBlock, int size, int excessSize, int fromFreeList);
-
-static void replace_block_freeList(void *oldBlock, void *newBlock);
-
 static void add_block_freeList(int *block);
 
 static void remove_block_freeList(void *block);
@@ -61,3 +57,5 @@ static void remove_block_freeList(void *block);
 static int get_largest_freeBlock();
 
 int getNumberOfBlocks();
+
+void clearFragmentation();

@@ -35,7 +35,7 @@ typedef enum //	Policy type definition
     NEXT
 } Policy;
 
-char *sma_malloc_error;
+char sma_malloc_error[100];
 int *startOfMemory = NULL;              //	The pointer to the HEAD of the doubly linked free memory list
 int *endOfMemory = NULL;              //	The pointer to the TAIL of the doubly linked free memory list
 int *lastMemory = NULL;
@@ -77,10 +77,10 @@ void newTag(int *ptr, int sizeOfMemory, int isFree) {
 }
 
 
-int *getPreviousMemoryLocation(int *ptr){
+int *getPreviousMemoryLocation(int *ptr) {
     int *itr = startOfMemory;
-    while (itr != endOfMemory){
-        if (getNextMemoryLocation(itr) == ptr){
+    while (itr != endOfMemory) {
+        if (getNextMemoryLocation(itr) == ptr) {
             return itr;
         }
         itr = getNextMemoryLocation(itr);
@@ -104,6 +104,11 @@ int *getPreviousMemoryLocation(int *ptr){
 int i = 0;
 
 void *sma_malloc(int size) {
+    if (size < 0) {
+        strcpy(sma_malloc_error, "Size cannot be smaller than 0");
+        return NULL;
+    }
+    
     void *pMemory = NULL;
     
     // Checks if the free list is empty
@@ -113,7 +118,7 @@ void *sma_malloc(int size) {
         pMemory = allocate_pBrk(size);
         i++;
     } else { // If free list is not empty
-
+        
         // Allocate memory from the free memory list
         pMemory = allocate_freeList(size);
         // If a valid memory could NOT be allocated from the free memory list
@@ -122,11 +127,12 @@ void *sma_malloc(int size) {
             pMemory = allocate_pBrk(size);
             i++;
         }
+        clearFragmentation();
     }
     
     // Validates memory allocation
     if (pMemory < 0 || pMemory == NULL) {
-        sma_malloc_error = "Error: Memory allocation failed!";
+        strcpy(sma_malloc_error, "Error: Memory allocation failed!");
         return NULL;
     }
     
@@ -153,6 +159,7 @@ void sma_free(void *ptr) {
     } else {
         //	Adds the block to the free memory list
         add_block_freeList(ptr);
+       
     }
 }
 
@@ -196,6 +203,8 @@ void sma_mallinfo() {
     
     sprintf(debug, "sbrk called number called %d", i);
     puts(debug);
+    
+
 }
 
 /*
@@ -214,17 +223,25 @@ void *sma_realloc(void *ptr, int size) {
     //			like sma_malloc.
     //			Should not accept a NULL pointer, and the size should be greater than 0.
     int *mem = NULL;
-    if (size < 0 || ptr == NULL){
-        return mem;
+    if (size < 0 || ptr == NULL) {
+        strcpy(sma_malloc_error, "Size cannot be smaller than 0 or pointer cannot be NULL");
+        return NULL;
     }
 //    int a = getSizeOfMemory(getPreviousMemoryLocation(getNextMemoryLocation(ptr)));
 //    int b = getSizeOfMemory(ptr);
     
-    if(getSizeOfMemory(ptr) > size) {
-        //assign it
-    }
-    else {
-       mem =  sma_malloc(size);
+    if (getSizeOfMemory(ptr) > size) {
+        int excess = getSizeOfMemory(ptr);
+        if (excess > HEADER_SIZE) {
+            setIsMemoryFree(ptr, 0);
+        } else {
+            newTag(ptr, size, 0);
+            remove_block_freeList(ptr);
+            newTag(getNextMemoryLocation(ptr), excess, 1);
+            add_block_freeList(ptr);
+        }
+    } else {
+        mem = sma_malloc(size);
     }
     return mem;
 }
@@ -300,7 +317,7 @@ void *allocate_worst_fit(int size) {
     int blockFound;
     
     int largestBlock = get_largest_freeBlock();
-    
+
 //    sprintf(debug, "size of worse block %d", largestBlock/ONE_BYTE);
 //    puts(debug);
 //
@@ -333,7 +350,7 @@ void *allocate_worst_fit(int size) {
 //
 //    sprintf(debug, "allocating from free blocks block location %p next block is at %p end %p", worstBlock, getNextMemoryLocation(worstBlock), endOfMemory);
 //    puts(debug);
-
+    
     if (blockFound) {
         int *itr = startOfMemory;
         while (1) {
@@ -370,34 +387,34 @@ void *allocate_worst_fit(int size) {
 void *allocate_next_fit(int size) {
     int *nextBlock = NULL;
     int blockFound = 0;
-
+    
     if (lastMemory == NULL) {
         lastMemory = startOfMemory;
     }
-
+    
     int *itr = lastMemory;
     while (1) {
-
+        
         if (getSizeOfMemory(itr) > size && getIsMemoryFree(itr)) {
             nextBlock = itr;
             lastMemory = itr;
             blockFound = 1;
             break;
         }
-
+        
         if (itr > endOfMemory) {
             itr = startOfMemory;
         }
         
         itr = getNextMemoryLocation(itr);
         
-        if (itr == lastMemory){
+        if (itr == lastMemory) {
             break;
         }
     }
-
-
-
+    
+    
+    
     //	TODO: 	Allocate memory by using Next Fit Policy
     //	Hint:	You should use a global pointer to keep track of your last allocated memory address, and
     //			allocate free blocks that come after that address (i.e. on top of it). Once you reach
@@ -408,18 +425,18 @@ void *allocate_next_fit(int size) {
     if (blockFound) {
         int sizeOfBlock = getSizeOfMemory(itr);
         int excess = sizeOfBlock - size - HEADER_SIZE;
-
-        if (excess >10) {
+        
+        if (excess > HEADER_SIZE) {
             newTag(nextBlock, size, 0);
-            newTag(getNextMemoryLocation(nextBlock), excess,1);
+            newTag(getNextMemoryLocation(nextBlock), excess, 1);
         } else {
-            newTag(nextBlock, size+8, 0);
+            newTag(nextBlock, size + 8, 0);
         }
 
 //        sprintf(debug, "memory size %d, location %p excess %d", getSizeOfMemory(itr), itr, excess);
 //        puts(debug);
-
-
+        
+        
         //	Allocates the Memory Block
 //        allocate_block(nextBlock, size, excessSize, 1);
     } else {
@@ -430,73 +447,10 @@ void *allocate_next_fit(int size) {
     return nextBlock;
 }
 
-/*
- *	Funcation Name: allocate_block
- *	Input type:		void*, int, int, int
- * 	Output type:	void
- * 	Description:	Performs routine operations for allocating a memory block
- */
-void allocate_block(int *newBlock, int size, int excessSize, int fromFreeList) {
-    int *excessFreeBlock; //	pointer for any excess free block
-    int addFreeBlock;
-    
-    // 	Checks if excess free size is big enough to be added to the free memory list
-    //	Helps to reduce external fragmentation
-    
-    //	TODO: Adjust the condition based on your Head and Tail size (depends on your TAG system)
-    //	Hint: Might want to have a minimum size greater than the Head/Tail sizes
-    addFreeBlock = excessSize > HEADER_SIZE;
-    
-    //	If excess free size is big enough
-    if (addFreeBlock) {
-        //	TODO: Create a free block using the excess memory size, then assign it to the Excess Free Block
-        
-        excessFreeBlock = getNextMemoryLocation(newBlock);
-        newTag(excessFreeBlock, size, 1);
-
-//        sprintf(debug, "old location %p \nstart %p \nlocation %p, size %d isFree %d", newBlock,startOfMemory,excessFreeBlock, getSizeOfMemory(excessFreeBlock), getIsMemoryFree(excessFreeBlock));
-//        puts(debug);
-        
-        //	Checks if the new block was allocated from the free memory list
-        if (fromFreeList) {
-            //	Removes new block and adds the excess free block to the free list
-            replace_block_freeList(newBlock, excessFreeBlock);
-        } else {
-            //	Adds excess free block to the free list
-            add_block_freeList(excessFreeBlock);
-        }
-    }
-        //	Otherwise add the excess memory to the new block
-    else {
-        //	TODO: Add excessSize to size and assign it to the new Block
-        
-        //	Checks if the new block was allocated from the free memory list
-        if (fromFreeList) {
-            //	Removes the new block from the free list
-            remove_block_freeList(newBlock);
-        }
-    }
-}
-
-/*
- *	Funcation Name: replace_block_freeList
- *	Input type:		void*, void*
- * 	Output type:	void
- * 	Description:	Replaces old block with the new block in the free list
- */
-void replace_block_freeList(void *oldBlock, void *newBlock) {
-    //	TODO: Replace the old block with the new block
-    
-    //	Updates SMA info
-    totalAllocatedSize += (getSizeOfMemory(oldBlock) - getSizeOfMemory(newBlock));
-    totalFreeSize += (getSizeOfMemory(newBlock) - getSizeOfMemory(oldBlock));
-}
-
-
 void mergeCells() {
     int *itr = startOfMemory;
     
-
+    
     while (itr != endOfMemory) {
         //if both adjacent are free we can merge them
 //        sprintf(debug, "current %d, next %d, size of curr %d",getIsMemoryFree(itr),getIsMemoryFree(getNextMemoryLocation(itr)),getSizeOfMemory(itr) );
@@ -506,18 +460,20 @@ void mergeCells() {
             int nextBlockSize = getSizeOfMemory(getNextMemoryLocation(itr));
 //            sprintf(debug, "current %d, next %d, next one %d",currentBlockSize,nextBlockSize, currentBlockSize+nextBlockSize);
 //            puts(debug);
-            setSizeOfMemory(itr, currentBlockSize + nextBlockSize + HEADER_SIZE);
+            setSizeOfMemory(itr, (currentBlockSize + nextBlockSize + HEADER_SIZE));
         }
         if (itr >= endOfMemory) {
             break;
         }
+    
         itr = getNextMemoryLocation(itr);
-
     }
-    if (getSizeOfMemory(itr) > MAX_TOP_FREE){
+    if (getSizeOfMemory(itr) > MAX_TOP_FREE) {
         sbrk(MAX_TOP_FREE - getSizeOfMemory(itr));
+        endOfMemory = sbrk(0);
     }
-
+//    clearFragmentation();
+    
 }
 
 /*
@@ -593,17 +549,40 @@ int get_largest_freeBlock() {
 
 
 int getNumberOfBlocks() {
-    
     int numberBlocks = 0;
     int *itr = startOfMemory;
     while (1) {
+        
+//        if (getSizeOfMemory(itr) > HEADER_SIZE) //get rid of the fragmentation
+            numberBlocks++;
+        
         if (itr >= endOfMemory) {
             break;
         }
-
+        
         itr = getNextMemoryLocation(itr);
-        numberBlocks++;
     }
     
     return numberBlocks;
+}
+
+void clearFragmentation(){
+    int *itr = startOfMemory;
+    int *itr_2 = getNextMemoryLocation(itr);
+    while (1) {
+    
+        //get rid of the fragmentation
+        if (itr_2 <= endOfMemory && getSizeOfMemory(itr_2) <= HEADER_SIZE) {
+            newTag(itr,(getSizeOfMemory(itr)+getSizeOfMemory(itr_2)+ HEADER_SIZE),getIsMemoryFree(itr));
+            itr_2 = getNextMemoryLocation(itr_2);
+            continue;
+        }
+        
+        if (itr_2 >= endOfMemory) {
+            break;
+        }
+        
+        itr = getNextMemoryLocation(itr);
+        itr_2 = getNextMemoryLocation(itr_2);
+    }
 }

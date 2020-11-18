@@ -186,28 +186,28 @@ int main(int argc, char *argv[]) {
     
     
     
-//    // Test 2: Program Break expansion Test
-//    puts("Test 2: Program break expansion test...");
-//    sma_mallopt(WORST_FIT);
-//    count = 0;
-//    for (i = 1; i < 40; i++) {
-//        sprintf(str, "%d", i);
-//        limitbefore = sbrk(0);
-//        ptr = sma_malloc(1024 * 32 * i);
-//        limitafter = sbrk(0);
-//
-//        if (limitafter > limitbefore)
-//            count++;
-//
-//    }
-//
-//    // Testing if the program breaks are incremented correctly
-//    if (count > 0 && count < 40)
-//        puts("\t\t\t\t PASSED\n");
-//    else
-//        puts("\t\t\t\t FAILED\n");
-//
-//
+    // Test 2: Program Break expansion Test
+    puts("Test 2: Program break expansion test...");
+    sma_mallopt(WORST_FIT);
+    count = 0;
+    for (i = 1; i < 40; i++) {
+        sprintf(str, "%d", i);
+        limitbefore = sbrk(0);
+        ptr = sma_malloc(1024 * 32 * i);
+        limitafter = sbrk(0);
+
+        if (limitafter > limitbefore)
+            count++;
+
+    }
+
+    // Testing if the program breaks are incremented correctly
+    if (count > 0 && count < 40)
+        puts("\t\t\t\t PASSED\n");
+    else
+        puts("\t\t\t\t FAILED\n");
+
+
     
     
     //	Test 6: Print Stats
