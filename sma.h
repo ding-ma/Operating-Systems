@@ -59,4 +59,5 @@ static void add_block_freeList(int *block);
 static void remove_block_freeList(void *block);
 
 static int get_largest_freeBlock();
-//  TODO: Declare any private functions that you intend to add in your code.
+
+int getNumberOfBlocks();
