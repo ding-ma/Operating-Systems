@@ -65,24 +65,24 @@ int main(int argc, char *argv[]) {
         puts("\t\t\t\t FAILED\n");
     
     
-    // Test 2: Program Break expansion Test
-    puts("Test 2: Program break expansion test...");
-
-    count = 0;
-    for (i = 1; i < 40; i++) {
-        limitbefore = sbrk(0);
-        ptr = sma_malloc(1024 * 32 * i);
-        limitafter = sbrk(0);
-
-        if (limitafter > limitbefore)
-            count++;
-    }
-
-    // Testing if the program breaks are incremented correctly
-    if (count > 0 && count < 40)
-        puts("\t\t\t\t PASSED\n");
-    else
-        puts("\t\t\t\t FAILED\n");
+//    // Test 2: Program Break expansion Test
+//    puts("Test 2: Program break expansion test...");
+//
+//    count = 0;
+//    for (i = 1; i < 40; i++) {
+//        limitbefore = sbrk(0);
+//        ptr = sma_malloc(1024 * 32 * i);
+//        limitafter = sbrk(0);
+//
+//        if (limitafter > limitbefore)
+//            count++;
+//    }
+//
+//    // Testing if the program breaks are incremented correctly
+//    if (count > 0 && count < 40)
+//        puts("\t\t\t\t PASSED\n");
+//    else
+//        puts("\t\t\t\t FAILED\n");
     
     
     
@@ -136,33 +136,54 @@ int main(int argc, char *argv[]) {
     //	Freeing cp2
     sma_free(cp2);
 
-//    // Test 4: Next Fit Test
-//    puts("Test 4: Check for Next Fit algorithm...");
-//    // Sets Policy to Next Fit
-//    sma_mallopt(NEXT_FIT);
-//
-//    int *cp3 = (int *) sma_malloc(16 * 1024 * 3);
-//    int *cp4 = (int *) sma_malloc(16 * 1024 * 2);
-//
-////    sprintf(str,"memlocation of c2.8 %p", c2[8]);
-////    puts(str);
-////    sprintf(str,"memlocation of c2.19 %p", c2[19]);
-////    puts(str);
-//    // Testing if the correct holes have been allocated
-//    if (cp3 == c2[8] && cp3 != NULL) {
-//        if (cp4 == c2[19]) {
-//            // sprintf(str, "C[19]: %p", c[19]);
-//            // puts(str);
-//            // sprintf(str, "CP4: %p", cp4);
-//            // puts(str);
-//            puts("\t\t\t\t PASSED\n");
-//        } else {
-//            puts("\t\t\t\t FAILED\n");
-//        }
-//    } else {
-//        puts("\t\t\t\t FAILED\n");
-//    }
-//
+    // Test 4: Next Fit Test
+    puts("Test 4: Check for Next Fit algorithm...");
+    // Sets Policy to Next Fit
+    sma_mallopt(NEXT_FIT);
+
+    int *cp3 = (int *) sma_malloc(16 * 1024 * 3);
+    int *cp4 = (int *) sma_malloc(16 * 1024 * 2);
+
+//    sprintf(str,"memlocation of c2.8 %p", c2[8]);
+//    puts(str);
+//    sprintf(str,"memlocation of c2.19 %p", c2[19]);
+//    puts(str);
+    // Testing if the correct holes have been allocated
+    if (cp3 == c2[8] && cp3 != NULL) {
+        if (cp4 == c2[19]) {
+            // sprintf(str, "C[19]: %p", c[19]);
+            // puts(str);
+            // sprintf(str, "CP4: %p", cp4);
+            // puts(str);
+            puts("\t\t\t\t PASSED\n");
+        } else {
+            puts("\t\t\t\t FAILED\n");
+        }
+    } else {
+        puts("\t\t\t\t FAILED\n");
+    }
+    
+        // Test 2: Program Break expansion Test
+    puts("Test 2: Program break expansion test...");
+    sma_mallopt(WORST_FIT);
+    count = 0;
+    for (i = 1; i < 40; i++) {
+        sprintf(str, "%d", i);
+        limitbefore = sbrk(0);
+        ptr = sma_malloc(1024 * 32 * i);
+        limitafter = sbrk(0);
+
+        if (limitafter > limitbefore)
+            count++;
+       
+    }
+
+    // Testing if the program breaks are incremented correctly
+    if (count > 0 && count < 40)
+        puts("\t\t\t\t PASSED\n");
+    else
+        puts("\t\t\t\t FAILED\n");
+
 //    // Test 5: Realloc test (with Next Fit)
 //    puts("Test 5: Check for Reallocation with Next Fit...");
 //    // Writes some value pointed by the pointer

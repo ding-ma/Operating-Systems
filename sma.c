@@ -300,9 +300,9 @@ void *allocate_worst_fit(int size) {
     
     int largestBlock = get_largest_freeBlock();
     
-    sprintf(debug, "size of worse block %d", largestBlock/ONE_BYTE);
-    puts(debug);
-    
+//    sprintf(debug, "size of worse block %d", largestBlock/ONE_BYTE);
+//    puts(debug);
+//
     blockFound = largestBlock > size;
     //	TODO: 	Allocate memory by using Worst Fit Policy
     //	Hint:	Start off with the freeListHead and iterate through the entire list to
@@ -498,8 +498,8 @@ void mergeCells() {
         if (getIsMemoryFree(itr) && getIsMemoryFree(getNextMemoryLocation(itr))) {
             int currentBlockSize = getSizeOfMemory(itr);
             int nextBlockSize = getSizeOfMemory(getNextMemoryLocation(itr));
-            sprintf(debug, "current %d, next %d, next one %d",currentBlockSize,nextBlockSize, currentBlockSize+nextBlockSize);
-            puts(debug);
+//            sprintf(debug, "current %d, next %d, next one %d",currentBlockSize,nextBlockSize, currentBlockSize+nextBlockSize);
+//            puts(debug);
             setSizeOfMemory(itr, currentBlockSize + nextBlockSize + HEADER_SIZE);
         }
         if (itr >= endOfMemory) {
