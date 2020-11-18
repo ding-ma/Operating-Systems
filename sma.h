@@ -59,3 +59,17 @@ static int get_largest_freeBlock();
 int getNumberOfBlocks();
 
 void clearFragmentation();
+
+int getSizeOfMemory(int *ptr);
+
+void setSizeOfMemory(int *ptr, int size);
+
+int getIsMemoryFree(int *ptr);
+
+void setIsMemoryFree(int *ptr, int free);
+
+int *getNextMemoryLocation(int *ptr);
+
+void newTag(int *ptr, int sizeOfMemory, int isFree);
+
+int *getPreviousMemoryLocation(int *ptr);

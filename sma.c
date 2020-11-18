@@ -25,9 +25,7 @@
 /* Definitions*/
 #define ONE_BYTE 1024
 #define MAX_TOP_FREE (128 *  ONE_BYTE) // Max top free block size = 128 Kbytes
-//	TODO: Change the Header size if required
 #define HEADER_SIZE (2*sizeof(int)) // Size of the Header in a free memory block
-//	TODO: Add constants here
 
 typedef enum //	Policy type definition
 {
@@ -42,51 +40,7 @@ int *lastMemory = NULL;
 unsigned long totalAllocatedSize = 0; //	Total Allocated memory in Bytes
 unsigned long totalFreeSize = 0;      //	Total Free memory in Bytes in the free memory list
 Policy currentPolicy = WORST;          //	Current Policy
-//	TODO: Add any global variables here
 char debug[100];
-
-int getSizeOfMemory(int *ptr) {
-    ptr = ptr - 8;
-    return *(int *) ptr;
-}
-
-void setSizeOfMemory(int *ptr, int size) {
-    ptr = ptr - 8;
-    *ptr = size;
-}
-
-int getIsMemoryFree(int *ptr) {
-    ptr = ptr - 4;
-    return *(int *) ptr;
-}
-
-void setIsMemoryFree(int *ptr, int free) {
-    ptr = ptr - 4;
-    *ptr = free;
-}
-
-int *getNextMemoryLocation(int *ptr) {
-    int size = getSizeOfMemory(ptr);
-    ptr = (ptr + (size + HEADER_SIZE) / 4);
-    return ptr;
-}
-
-void newTag(int *ptr, int sizeOfMemory, int isFree) {
-    setSizeOfMemory(ptr, sizeOfMemory);
-    setIsMemoryFree(ptr, isFree);
-}
-
-
-int *getPreviousMemoryLocation(int *ptr) {
-    int *itr = startOfMemory;
-    while (itr != endOfMemory) {
-        if (getNextMemoryLocation(itr) == ptr) {
-            return itr;
-        }
-        itr = getNextMemoryLocation(itr);
-    }
-    return NULL;
-}
 
 /*
  * =====================================================================================
@@ -159,7 +113,7 @@ void sma_free(void *ptr) {
     } else {
         //	Adds the block to the free memory list
         add_block_freeList(ptr);
-       
+       clearFragmentation();
     }
 }
 
@@ -204,7 +158,6 @@ void sma_mallinfo() {
     sprintf(debug, "sbrk called number called %d", i);
     puts(debug);
     
-
 }
 
 /*
@@ -241,8 +194,10 @@ void *sma_realloc(void *ptr, int size) {
             add_block_freeList(ptr);
         }
     } else {
+        sma_free(ptr);
         mem = sma_malloc(size);
     }
+    clearFragmentation();
     return mem;
 }
 
@@ -278,7 +233,6 @@ void *allocate_pBrk(int size) {
     
     endOfMemory = getNextMemoryLocation(newBlock);
     newTag(endOfMemory, excessSize, 1);
-//    allocate_block(newBlock, size, excessSize, 0);
     
     return newBlock;
 }
@@ -363,7 +317,7 @@ void *allocate_worst_fit(int size) {
         worstBlock = itr;
         
         int *newChunk = getNextMemoryLocation(itr);
-        newTag(newChunk, largestBlock - HEADER_SIZE - size, 1);
+        newTag(newChunk, (largestBlock - HEADER_SIZE - size), 1);
         if (newChunk > endOfMemory) {
             endOfMemory = newChunk;
         }
@@ -395,7 +349,7 @@ void *allocate_next_fit(int size) {
     int *itr = lastMemory;
     while (1) {
         
-        if (getSizeOfMemory(itr) > size && getIsMemoryFree(itr)) {
+        if (getSizeOfMemory(itr) >= size && getIsMemoryFree(itr)) {
             nextBlock = itr;
             lastMemory = itr;
             blockFound = 1;
@@ -409,6 +363,7 @@ void *allocate_next_fit(int size) {
         itr = getNextMemoryLocation(itr);
         
         if (itr == lastMemory) {
+            blockFound = 0;
             break;
         }
     }
@@ -429,6 +384,9 @@ void *allocate_next_fit(int size) {
         if (excess > HEADER_SIZE) {
             newTag(nextBlock, size, 0);
             newTag(getNextMemoryLocation(nextBlock), excess, 1);
+            if (getNextMemoryLocation(nextBlock) > endOfMemory) {
+                endOfMemory= getNextMemoryLocation(nextBlock);
+            }
         } else {
             newTag(nextBlock, size + 8, 0);
         }
@@ -572,7 +530,7 @@ void clearFragmentation(){
     while (1) {
     
         //get rid of the fragmentation
-        if (itr_2 <= endOfMemory && getSizeOfMemory(itr_2) <= HEADER_SIZE) {
+        if (itr_2 < endOfMemory && getSizeOfMemory(itr_2) <= HEADER_SIZE) {
             newTag(itr,(getSizeOfMemory(itr)+getSizeOfMemory(itr_2)+ HEADER_SIZE),getIsMemoryFree(itr));
             itr_2 = getNextMemoryLocation(itr_2);
             continue;
@@ -585,4 +543,49 @@ void clearFragmentation(){
         itr = getNextMemoryLocation(itr);
         itr_2 = getNextMemoryLocation(itr_2);
     }
+}
+
+
+
+int getSizeOfMemory(int *ptr) {
+    ptr = ptr - 8;
+    return *(int *) ptr;
+}
+
+void setSizeOfMemory(int *ptr, int size) {
+    ptr = ptr - 8;
+    *ptr = size;
+}
+
+int getIsMemoryFree(int *ptr) {
+    ptr = ptr - 4;
+    return *(int *) ptr;
+}
+
+void setIsMemoryFree(int *ptr, int free) {
+    ptr = ptr - 4;
+    *ptr = free;
+}
+
+int *getNextMemoryLocation(int *ptr) {
+    int size = getSizeOfMemory(ptr);
+    ptr = (ptr + (size + HEADER_SIZE) / 4);
+    return ptr;
+}
+
+void newTag(int *ptr, int sizeOfMemory, int isFree) {
+    setSizeOfMemory(ptr, sizeOfMemory);
+    setIsMemoryFree(ptr, isFree);
+}
+
+
+int *getPreviousMemoryLocation(int *ptr) {
+    int *itr = startOfMemory;
+    while (itr != endOfMemory) {
+        if (getNextMemoryLocation(itr) == ptr) {
+            return itr;
+        }
+        itr = getNextMemoryLocation(itr);
+    }
+    return NULL;
 }

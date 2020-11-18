@@ -7,7 +7,8 @@ set(sma sma)
 
 add_library(
         ${sma} STATIC
-        sma.h sma.c
+        sma.h
+        sma.c
 )
 
 add_executable(a3_test a3_test.c)
