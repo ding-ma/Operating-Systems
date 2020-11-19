@@ -99,7 +99,7 @@ static void *allocate_next_fit(int size);
 
 
 /**
- * Merges the adjacent free blocks in the list to create a bigger one
+ * Merges the adjacent free blocks from right to left in the list to create a bigger one
  */
 void mergeCells();
 

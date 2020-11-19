@@ -34,8 +34,8 @@ typedef enum {
 } Policy;
 
 char sma_malloc_error[100];
-int *startOfMemory = NULL;              //	The pointer to the HEAD of the doubly linked free memory list
-int *endOfMemory = NULL;              //	The pointer to the TAIL of the doubly linked free memory list
+int *startOfMemory = NULL;              //	The pointer to the HEAD of the doubly linked memory list
+int *endOfMemory = NULL;              //	The pointer to the TAIL of the doubly linked memory list
 int *lastMemory = NULL;                 // last memory location of NEXT FIT policy
 unsigned long totalAllocatedSize = 0; //	Total Allocated memory in Bytes
 unsigned long totalFreeSize = 0;      //	Total Free memory in Bytes in the free memory list
@@ -100,7 +100,6 @@ void sma_free(void *ptr) {
         //	Adds the block to the free memory list
         add_block_freeList(ptr);
         clearFragmentation();
-        
     }
 }
 
@@ -118,7 +117,7 @@ void sma_mallopt(int policy) {
 void sma_mallinfo() {
     //	Finds the largest Contiguous Free Space (should be the largest free block)
     int largestFreeBlock = get_largest_freeBlock();
-//     = getNumberOfBlocks();
+    
     getStats();
     char str[60];
     
@@ -152,8 +151,6 @@ void *sma_realloc(void *ptr, int size) {
         strcpy(sma_malloc_error, "Size cannot be smaller than 0 or pointer cannot be NULL");
         return NULL;
     }
-//    int a = getSizeOfMemory(getPreviousMemoryLocation(getNextMemoryLocation(ptr)));
-//    int b = getSizeOfMemory(ptr);
     
     if (getSizeOfMemory(ptr) > size) {
         int excess = getSizeOfMemory(ptr);
@@ -229,39 +226,11 @@ void *allocate_worst_fit(int size) {
     int blockFound;
  
     int largestBlock = get_largest_freeBlock();
-
-//    sprintf(debug, "size of worse block %d", largestBlock/ONE_BYTE);
-//    puts(debug);
-//
+    
     blockFound = largestBlock > size;
     //	TODO: 	Allocate memory by using Worst Fit Policy
     //	Hint:	Start off with the freeListHead and iterate through the entire list to
     //			get the largest block
-    
-    //	Checks if appropriate block is found.
-//    int *itr = startOfMemory;
-//    int biggestSize = 0;
-//    while (1){
-//        if (getSizeOfMemory(itr) > biggestSize){
-//            biggestSize = getSizeOfMemory(itr);
-//        }
-//        itr = getNextMemoryLocation(itr);
-//
-//        if (itr != endOfMemory){
-//            if (getSizeOfMemory(itr) > biggestSize){
-//                biggestSize = getSizeOfMemory(itr);
-//            }
-//            break;
-//        }
-//    }
-//
-//    worstBlock = itr;
-//    blockFound = biggestSize > size;
-//    excessSize = biggestSize - size - HEADER_SIZE;
-//
-//
-//    sprintf(debug, "allocating from free blocks block location %p next block is at %p end %p", worstBlock, getNextMemoryLocation(worstBlock), endOfMemory);
-//    puts(debug);
     
     if (blockFound) {
         int *itr = startOfMemory;
@@ -279,9 +248,6 @@ void *allocate_worst_fit(int size) {
         if (newChunk > endOfMemory) {
             endOfMemory = newChunk;
         }
-//        newTag(worstBlock, size,0);
-        //	Allocates the Memory Block
-//        allocate_block(worstBlock, size, excessSize, 1);
     } else {
         //	Assigns invalid address if appropriate block not found in free list
         worstBlock = (void *) -2;
@@ -321,8 +287,6 @@ void *allocate_next_fit(int size) {
         }
     }
     
-    
-    
     //	TODO: 	Allocate memory by using Next Fit Policy
     //	Hint:	You should use a global pointer to keep track of your last allocated memory address, and
     //			allocate free blocks that come after that address (i.e. on top of it). Once you reach
@@ -343,13 +307,7 @@ void *allocate_next_fit(int size) {
         } else {
             newTag(nextBlock, size + 8, 0);
         }
-
-//        sprintf(debug, "memory size %d, location %p excess %d", getSizeOfMemory(itr), itr, excess);
-//        puts(debug);
         
-        
-        //	Allocates the Memory Block
-//        allocate_block(nextBlock, size, excessSize, 1);
     } else {
         //	Assigns invalid address if appropriate block not found in free list
         nextBlock = (void *) -2;
@@ -363,15 +321,16 @@ void mergeCells() {
     
     
     while (itr != endOfMemory) {
+        
         //if both adjacent are free we can merge them
-//        sprintf(debug, "current %d, next %d, size of curr %d",getIsMemoryFree(itr),getIsMemoryFree(getNextMemoryLocation(itr)),getSizeOfMemory(itr) );
-//        puts(debug);
         if (getIsMemoryFree(itr) && getIsMemoryFree(getNextMemoryLocation(itr))) {
             int currentBlockSize = getSizeOfMemory(itr);
             int nextBlockSize = getSizeOfMemory(getNextMemoryLocation(itr));
-//            sprintf(debug, "current %d, next %d, next one %d",currentBlockSize,nextBlockSize, currentBlockSize+nextBlockSize);
-//            puts(debug);
+            
             setSizeOfMemory(itr, (currentBlockSize + nextBlockSize + HEADER_SIZE));
+            if (getNextMemoryLocation(itr) >=endOfMemory){
+                itr = endOfMemory;
+            }
         }
         if (itr >= endOfMemory) {
             break;
@@ -380,8 +339,9 @@ void mergeCells() {
         itr = getNextMemoryLocation(itr);
     }
     if (getSizeOfMemory(itr) > MAX_TOP_FREE) {
-        sbrk(MAX_TOP_FREE - getSizeOfMemory(itr));
-        endOfMemory = sbrk(0);
+        int extra = MAX_TOP_FREE - getSizeOfMemory(itr); //this should be negative
+        sbrk(extra);
+        setSizeOfMemory(itr, getSizeOfMemory(itr) + extra);
     }
     
 }
@@ -395,14 +355,12 @@ void add_block_freeList(int *block) {
     //			block is at the top and is bigger than the largest free block allowed (128kB).
     
     setIsMemoryFree(block, 1);
-
-//    sprintf(debug, "curr location %p end of block %p", block, endOfMemory);
-//    puts(debug);
     mergeCells();
     
-    if(getSizeOfMemory(block) == 16*ONE_BYTE){
-        lastMemory = block;
-    }
+    //if we run test 2 before test 3 and 4, we need to "manually" set the pointer location.
+//    if(getSizeOfMemory(block) == 16*ONE_BYTE){
+//        lastMemory = block;
+//    }
 }
 
 
@@ -462,7 +420,7 @@ void clearFragmentation(){
     int *itr_2 = getNextMemoryLocation(itr);
     while (1) {
     
-        //get rid of the fragmentation
+        //merge tag with previous memory if the current memory size is just the tag size.
         if (itr_2 < endOfMemory && getSizeOfMemory(itr_2) <= HEADER_SIZE) {
             newTag(itr,(getSizeOfMemory(itr)+getSizeOfMemory(itr_2)+ HEADER_SIZE),getIsMemoryFree(itr));
             itr_2 = getNextMemoryLocation(itr_2);
