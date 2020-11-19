@@ -127,9 +127,9 @@ static int get_largest_freeBlock();
 
 /**
  *
- * @return number of blocks in the memory
+ * @return Iterate Over Memory to pull statistics
  */
-int getNumberOfBlocks();
+void getStats();
 
 /**
  * Clears fragmentation left behind last block (especially the tags)

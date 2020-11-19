@@ -27,8 +27,8 @@
 #define MAX_TOP_FREE (128 *  ONE_BYTE) // Max top free block size = 128 Kbytes
 #define HEADER_SIZE (2*sizeof(int)) // Size of the Header in a free memory block
 
-typedef enum //	Policy type definition
-{
+//	Policy type definition
+typedef enum {
     WORST,
     NEXT
 } Policy;
@@ -41,20 +41,13 @@ unsigned long totalAllocatedSize = 0; //	Total Allocated memory in Bytes
 unsigned long totalFreeSize = 0;      //	Total Free memory in Bytes in the free memory list
 Policy currentPolicy = WORST;          //	Current Policy
 char debug[100];
-
+int sbrkCounter = 0;
+int numberOfBlocks = 0;
 /*
  * =====================================================================================
  *	Public Functions for SMA
  * =====================================================================================
  */
-
-/*
- *	Funcation Name: sma_malloc
- *	Input type:		int
- * 	Output type:	void*
- * 	Description:
- */
-int i = 0;
 
 
 void *sma_malloc(int size) {
@@ -70,7 +63,6 @@ void *sma_malloc(int size) {
         // Allocate memory by increasing the Program Break
         sbrk(100);
         pMemory = allocate_pBrk(size);
-        i++;
     } else { // If free list is not empty
         
         // Allocate memory from the free memory list
@@ -79,7 +71,6 @@ void *sma_malloc(int size) {
         if (pMemory == (void *) -2) {
             // Allocate memory by increasing the Program Break
             pMemory = allocate_pBrk(size);
-            i++;
         }
         clearFragmentation();
     }
@@ -91,7 +82,7 @@ void *sma_malloc(int size) {
     }
     
     // Updates SMA Info
-    totalAllocatedSize += size;
+//    totalAllocatedSize += size;
     
     return pMemory;
 }
@@ -127,7 +118,8 @@ void sma_mallopt(int policy) {
 void sma_mallinfo() {
     //	Finds the largest Contiguous Free Space (should be the largest free block)
     int largestFreeBlock = get_largest_freeBlock();
-    int numberOfBlocks = getNumberOfBlocks();
+//     = getNumberOfBlocks();
+    getStats();
     char str[60];
     
     //	Prints the SMA Stats
@@ -141,7 +133,7 @@ void sma_mallinfo() {
     sprintf(str, "Size of largest contigious free space (in bytes): %d", largestFreeBlock);
     puts(str);
     
-    sprintf(debug, "sbrk called number called %d", i);
+    sprintf(debug, "sbrk called number called %d", sbrkCounter);
     puts(debug);
     
 }
@@ -189,6 +181,7 @@ void *sma_realloc(void *ptr, int size) {
 
 
 void *allocate_pBrk(int size) {
+    sbrkCounter++;
     int *newBlock = NULL;
     int excessSize;
     
@@ -390,7 +383,6 @@ void mergeCells() {
         sbrk(MAX_TOP_FREE - getSizeOfMemory(itr));
         endOfMemory = sbrk(0);
     }
-//    clearFragmentation();
     
 }
 
@@ -407,9 +399,7 @@ void add_block_freeList(int *block) {
 //    sprintf(debug, "curr location %p end of block %p", block, endOfMemory);
 //    puts(debug);
     mergeCells();
-    //	Updates SMA info
-    totalAllocatedSize -= getSizeOfMemory(block);
-    totalFreeSize += getSizeOfMemory(block);
+    
     if(getSizeOfMemory(block) == 16*ONE_BYTE){
         lastMemory = block;
     }
@@ -422,9 +412,6 @@ void remove_block_freeList(void *block) {
     //			You also need to remove any TAG in the free block.
     
     setIsMemoryFree(block, 0);
-    //	Updates SMA info
-    totalAllocatedSize += getSizeOfMemory(block);
-    totalFreeSize -= getSizeOfMemory(block);
 }
 
 
@@ -452,12 +439,14 @@ int get_largest_freeBlock() {
 }
 
 
-int getNumberOfBlocks() {
-    int numberBlocks = 0;
+void getStats() {
     int *itr = startOfMemory;
     while (1) {
-        
-        numberBlocks++;
+        numberOfBlocks++;
+        if (getIsMemoryFree(itr)){
+            totalFreeSize +=getSizeOfMemory(itr);
+        }
+        totalAllocatedSize+=getSizeOfMemory(itr);
         
         if (itr >= endOfMemory) {
             break;
@@ -465,8 +454,6 @@ int getNumberOfBlocks() {
         
         itr = getNextMemoryLocation(itr);
     }
-    
-    return numberBlocks;
 }
 
 
