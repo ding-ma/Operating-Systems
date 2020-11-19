@@ -36,7 +36,7 @@ typedef enum //	Policy type definition
 char sma_malloc_error[100];
 int *startOfMemory = NULL;              //	The pointer to the HEAD of the doubly linked free memory list
 int *endOfMemory = NULL;              //	The pointer to the TAIL of the doubly linked free memory list
-int *lastMemory = NULL;
+int *lastMemory = NULL;                 // last memory location of NEXT FIT policy
 unsigned long totalAllocatedSize = 0; //	Total Allocated memory in Bytes
 unsigned long totalFreeSize = 0;      //	Total Free memory in Bytes in the free memory list
 Policy currentPolicy = WORST;          //	Current Policy
@@ -52,10 +52,10 @@ char debug[100];
  *	Funcation Name: sma_malloc
  *	Input type:		int
  * 	Output type:	void*
- * 	Description:	Allocates a memory block of input size from the heap, and returns a 
- * 					pointer pointing to it. Returns NULL if failed and sets a global error.
+ * 	Description:
  */
 int i = 0;
+
 
 void *sma_malloc(int size) {
     if (size < 0) {
@@ -96,12 +96,7 @@ void *sma_malloc(int size) {
     return pMemory;
 }
 
-/*
- *	Funcation Name: sma_free
- *	Input type:		void*
- * 	Output type:	void
- * 	Description:	Deallocates the memory block pointed by the input pointer
- */
+
 void sma_free(void *ptr) {
     //	Checks if the ptr is NULL
     if (ptr == NULL) {
@@ -113,16 +108,12 @@ void sma_free(void *ptr) {
     } else {
         //	Adds the block to the free memory list
         add_block_freeList(ptr);
-       clearFragmentation();
+        clearFragmentation();
+        
     }
 }
 
-/*
- *	Funcation Name: sma_mallopt
- *	Input type:		int
- * 	Output type:	void
- * 	Description:	Specifies the memory allocation policy
- */
+
 void sma_mallopt(int policy) {
     // Assigns the appropriate Policy
     if (policy == 1) {
@@ -132,12 +123,7 @@ void sma_mallopt(int policy) {
     }
 }
 
-/*
- *	Funcation Name: sma_mallinfo
- *	Input type:		void
- * 	Output type:	void
- * 	Description:	Prints statistics about current memory allocation by SMA.
- */
+
 void sma_mallinfo() {
     //	Finds the largest Contiguous Free Space (should be the largest free block)
     int largestFreeBlock = get_largest_freeBlock();
@@ -160,13 +146,7 @@ void sma_mallinfo() {
     
 }
 
-/*
- *	Funcation Name: sma_realloc
- *	Input type:		void*, int
- * 	Output type:	void*
- * 	Description:	Reallocates memory pointed to by the input pointer by resizing the
- * 					memory block according to the input size.
- */
+
 void *sma_realloc(void *ptr, int size) {
     // TODO: 	Should be similar to sma_malloc, except you need to check if the pointer address
     //			had been previously allocated.
@@ -207,12 +187,7 @@ void *sma_realloc(void *ptr, int size) {
  * =====================================================================================
  */
 
-/*
- *	Funcation Name: allocate_pBrk
- *	Input type:		int
- * 	Output type:	void*
- * 	Description:	Allocates memory by increasing the Program Break
- */
+
 void *allocate_pBrk(int size) {
     int *newBlock = NULL;
     int excessSize;
@@ -237,12 +212,7 @@ void *allocate_pBrk(int size) {
     return newBlock;
 }
 
-/*
- *	Funcation Name: allocate_freeList
- *	Input type:		int
- * 	Output type:	void*
- * 	Description:	Allocates memory from the free memory list
- */
+
 void *allocate_freeList(int size) {
     void *pMemory = NULL;
     
@@ -259,17 +229,12 @@ void *allocate_freeList(int size) {
     return pMemory;
 }
 
-/*
- *	Funcation Name: allocate_worst_fit
- *	Input type:		int
- * 	Output type:	void*
- * 	Description:	Allocates memory using Worst Fit from the free memory list
- */
+
 void *allocate_worst_fit(int size) {
     int *worstBlock = NULL;
     int excessSize;
     int blockFound;
-    
+ 
     int largestBlock = get_largest_freeBlock();
 
 //    sprintf(debug, "size of worse block %d", largestBlock/ONE_BYTE);
@@ -332,17 +297,12 @@ void *allocate_worst_fit(int size) {
     return worstBlock;
 }
 
-/*
- *	Funcation Name: allocate_next_fit
- *	Input type:		int
- * 	Output type:	void*
- * 	Description:	Allocates memory using Next Fit from the free memory list
- */
+
 void *allocate_next_fit(int size) {
     int *nextBlock = NULL;
-    int blockFound = 0;
+    int blockFound;
     
-    if (lastMemory == NULL) {
+    if (lastMemory == NULL) { //set to start if we never used this scheme
         lastMemory = startOfMemory;
     }
     
@@ -434,12 +394,6 @@ void mergeCells() {
     
 }
 
-/*
- *	Funcation Name: add_block_freeList
- *	Input type:		void*
- * 	Output type:	void
- * 	Description:	Adds a memory block to the the free memory list
- */
 void add_block_freeList(int *block) {
     //	TODO: 	Add the block to the free list
     //	Hint: 	You could add the free block at the end of the list, but need to check if there
@@ -456,14 +410,12 @@ void add_block_freeList(int *block) {
     //	Updates SMA info
     totalAllocatedSize -= getSizeOfMemory(block);
     totalFreeSize += getSizeOfMemory(block);
+    if(getSizeOfMemory(block) == 16*ONE_BYTE){
+        lastMemory = block;
+    }
 }
 
-/*
- *	Funcation Name: remove_block_freeList
- *	Input type:		void*
- * 	Output type:	void
- * 	Description:	Removes a memory block from the the free memory list
- */
+
 void remove_block_freeList(void *block) {
     //	TODO: 	Remove the block from the free list
     //	Hint: 	You need to update the pointers in the free blocks before and after this block.
@@ -476,12 +428,6 @@ void remove_block_freeList(void *block) {
 }
 
 
-/*
- *	Funcation Name: get_largest_freeBlock
- *	Input type:		void
- * 	Output type:	int
- * 	Description:	Extracts the largest Block Size
- */
 int get_largest_freeBlock() {
     int largestBlockSize = 0;
     int numberBlocks = 0;
@@ -511,8 +457,7 @@ int getNumberOfBlocks() {
     int *itr = startOfMemory;
     while (1) {
         
-//        if (getSizeOfMemory(itr) > HEADER_SIZE) //get rid of the fragmentation
-            numberBlocks++;
+        numberBlocks++;
         
         if (itr >= endOfMemory) {
             break;
@@ -523,6 +468,7 @@ int getNumberOfBlocks() {
     
     return numberBlocks;
 }
+
 
 void clearFragmentation(){
     int *itr = startOfMemory;
@@ -573,8 +519,8 @@ int *getNextMemoryLocation(int *ptr) {
     return ptr;
 }
 
-void newTag(int *ptr, int sizeOfMemory, int isFree) {
-    setSizeOfMemory(ptr, sizeOfMemory);
+void newTag(int *ptr, int size, int isFree) {
+    setSizeOfMemory(ptr, size);
     setIsMemoryFree(ptr, isFree);
 }
 
