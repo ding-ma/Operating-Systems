@@ -189,8 +189,11 @@ void newTag(int *ptr, int size, int isFree);
 
 /**
  * Gets the previous memory location based on the current one
- * This needs to iterate throught the entire list as we have a singly linked list
+ * This needs to iterate through the entire list as we have a singly linked list
  * @param ptr current malloc ptr
  * @return ptr to previous memory location
  */
 int *getPreviousMemoryLocation(int *ptr);
+
+
+void iterateAndPrintBlock();

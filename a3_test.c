@@ -65,6 +65,25 @@ int main(int argc, char *argv[]) {
         puts("\t\t\t\t FAILED\n");
     
 
+    // Test 2: Program Break expansion Test
+    puts("Test 2: Program break expansion test...");
+
+    count = 0;
+    for (i = 1; i < 40; i++) {
+        limitbefore = sbrk(0);
+        ptr = sma_malloc(1024 * 32 * i);
+        limitafter = sbrk(0);
+        if (limitafter > limitbefore)
+            count++;
+        sma_free(ptr);
+    }
+    // Testing if the program breaks are incremented correctly
+    if (count > 0 && count < 40)
+        puts("\t\t\t\t PASSED\n");
+    else
+        puts("\t\t\t\t FAILED\n");
+
+
 //     Test 3: Worst Fit Test
     puts("Test 3: Check for Worst Fit algorithm...");
     // Sets Policy to Worst Fit
@@ -176,23 +195,23 @@ int main(int argc, char *argv[]) {
      */
     
     // Test 2: Program Break expansion Test
-    puts("Test 2: Program break expansion test...");
-    
-    count = 0;
-    for (i = 1; i < 40; i++) {
-        limitbefore = sbrk(0);
-        ptr = sma_malloc(1024 * 32 * i);
-        limitafter = sbrk(0);
-        if (limitafter > limitbefore)
-            count++;
-    }
-    
-    // Testing if the program breaks are incremented correctly
-    if (count > 0 && count < 40)
-        puts("\t\t\t\t PASSED\n");
-    else
-        puts("\t\t\t\t FAILED\n");
-    
+//    puts("Test 2: Program break expansion test...");
+//
+//    count = 0;
+//    for (i = 1; i < 40; i++) {
+//        limitbefore = sbrk(0);
+//        ptr = sma_malloc(1024 * 32 * i);
+//        limitafter = sbrk(0);
+//        if (limitafter > limitbefore)
+//            count++;
+//    }
+//
+//    // Testing if the program breaks are incremented correctly
+//    if (count > 0 && count < 40)
+//        puts("\t\t\t\t PASSED\n");
+//    else
+//        puts("\t\t\t\t FAILED\n");
+//
     
     //	Test 6: Print Stats
     puts("Test 6: Print SMA Statistics...");

@@ -51,6 +51,7 @@ int numberOfBlocks = 0;
 
 
 void *sma_malloc(int size) {
+    totalAllocatedSize+=size;
     if (size < 0) {
         strcpy(sma_malloc_error, "Size cannot be smaller than 0");
         return NULL;
@@ -97,6 +98,7 @@ void sma_free(void *ptr) {
     else if (ptr > sbrk(0)) {
         puts("Error: Attempting to free unallocated space!");
     } else {
+        totalFreeSize += getSizeOfMemory(ptr);
         //	Adds the block to the free memory list
         add_block_freeList(ptr);
         clearFragmentation();
@@ -118,22 +120,24 @@ void sma_mallinfo() {
     //	Finds the largest Contiguous Free Space (should be the largest free block)
     int largestFreeBlock = get_largest_freeBlock();
     
-    getStats();
+//    getStats();
     char str[60];
     
     //	Prints the SMA Stats
-    sprintf(str, "Total number of blocks: %d", numberOfBlocks);
+    sprintf(str, "Total number of memory blocks: %d", numberOfBlocks);
     puts(str);
     
     sprintf(str, "Total number of bytes allocated: %lu", totalAllocatedSize);
     puts(str);
+    
     sprintf(str, "Total free space: %lu", totalFreeSize);
     puts(str);
+    
     sprintf(str, "Size of largest contigious free space (in bytes): %d", largestFreeBlock);
     puts(str);
     
-    sprintf(debug, "sbrk called number called %d", sbrkCounter);
-    puts(debug);
+    sprintf(str, "sbrk called number called %d", sbrkCounter);
+    puts(str);
     
 }
 
@@ -156,13 +160,14 @@ void *sma_realloc(void *ptr, int size) {
         int excess = getSizeOfMemory(ptr);
         if (excess > HEADER_SIZE) {
             setIsMemoryFree(ptr, 0);
-        } else {
+        } else { //chop of the size the request wants and set the rest as free
             newTag(ptr, size, 0);
             remove_block_freeList(ptr);
             newTag(getNextMemoryLocation(ptr), excess, 1);
-            add_block_freeList(ptr);
+            add_block_freeList(getNextMemoryLocation(ptr));
         }
     } else {
+        lastMemory = ptr;
         sma_free(ptr);
         mem = sma_malloc(size);
     }
@@ -185,6 +190,9 @@ void *allocate_pBrk(int size) {
     newBlock = sbrk(size + MAX_TOP_FREE + HEADER_SIZE); // we will always get the maximum size
     excessSize = MAX_TOP_FREE;
     
+    if (startOfMemory == NULL) {
+        startOfMemory = newBlock;
+    }
     //	TODO: 	Allocate memory by incrementing the Program Break by calling sbrk() or brk()
     //	Hint:	Getting an exact "size" of memory might not be the best idea. Why?
     //			Also, if you are getting a larger memory, you need to put the excess in the free list
@@ -192,9 +200,7 @@ void *allocate_pBrk(int size) {
     //	Allocates the Memory Block
     newTag(newBlock, size, 0);
     
-    if (startOfMemory == NULL) {
-        startOfMemory = newBlock;
-    }
+    
     
     endOfMemory = getNextMemoryLocation(newBlock);
     newTag(endOfMemory, excessSize, 1);
@@ -375,8 +381,8 @@ void remove_block_freeList(void *block) {
 
 int get_largest_freeBlock() {
     int largestBlockSize = 0;
-    int numberBlocks = 0;
     int *itr = startOfMemory;
+    numberOfBlocks = 0;
     while (1) {
         if (getIsMemoryFree(itr) && getSizeOfMemory(itr) > largestBlockSize) {
             largestBlockSize = getSizeOfMemory(itr);
@@ -384,13 +390,13 @@ int get_largest_freeBlock() {
                 break;
             }
         }
+        numberOfBlocks++;
+        
         itr = getNextMemoryLocation(itr);
         
         if (itr > endOfMemory) {
             break;
         }
-        numberBlocks++;
-        
     }
     
     return largestBlockSize;
@@ -399,6 +405,9 @@ int get_largest_freeBlock() {
 
 void getStats() {
     int *itr = startOfMemory;
+    numberOfBlocks = 0;
+    totalAllocatedSize = 0;
+    totalFreeSize=0;
     while (1) {
         numberOfBlocks++;
         if (getIsMemoryFree(itr)){
@@ -436,6 +445,25 @@ void clearFragmentation(){
     }
 }
 
+
+void iterateAndPrintBlock(){
+    int *itr = startOfMemory;
+    
+    while (1) {
+        
+        if (getIsMemoryFree(itr)){
+            sprintf(debug, "%p size: %d, free", itr, getSizeOfMemory(itr)/ONE_BYTE);
+        }else{
+            sprintf(debug, "%p size: %d, not free", itr, getSizeOfMemory(itr)/ONE_BYTE);
+        }
+        puts(debug);
+        if (itr >= endOfMemory) {
+            break;
+        }
+        
+        itr = getNextMemoryLocation(itr);
+    }
+}
 
 
 int getSizeOfMemory(int *ptr) {
