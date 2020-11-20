@@ -83,7 +83,6 @@ int main(int argc, char *argv[]) {
     else
         puts("\t\t\t\t FAILED\n");
     
-//    iterateAndPrintBlock();
 
 //     Test 3: Worst Fit Test
     puts("Test 3: Check for Worst Fit algorithm...");
@@ -93,7 +92,7 @@ int main(int argc, char *argv[]) {
     // Allocating 512 kbytes of memory..
     for (i = 0; i < 32; i++)
         c2[i] = (int *) sma_malloc(16 * 1024);
-  
+    
     // Now deallocating some of the slots ..to free
     // One chunk of 5x16 kbytes
     sma_free(c2[31]);
@@ -119,6 +118,8 @@ int main(int argc, char *argv[]) {
     // One chunk of 2x16 kbytes
     sma_free(c2[5]);
     sma_free(c2[4]);
+    
+
     int *cp2 = (int *) sma_malloc(16 * 1024 * 2);
 
     // Testing if the correct hole has been allocated
@@ -130,10 +131,18 @@ int main(int argc, char *argv[]) {
     } else {
         puts("\t\t\t\t FAILED\n");
     }
+    
 
+    
     //	Freeing cp2
     sma_free(cp2);
 
+    
+    for (int j = 8; j < 11; ++j) {
+        sprintf(str, "location of c2.%d %p",j,c2[j]);
+        puts(str);
+    }
+    
     // Test 4: Next Fit Test
     puts("Test 4: Check for Next Fit algorithm...");
     // Sets Policy to Next Fit
@@ -141,7 +150,8 @@ int main(int argc, char *argv[]) {
 
     int *cp3 = (int *) sma_malloc(16 * 1024 * 3);
     int *cp4 = (int *) sma_malloc(16 * 1024 * 2);
-
+//    iterateAndPrintBlock();
+    
 
     // Testing if the correct holes have been allocated
     if (cp3 == c2[8] && cp3 != NULL) {
@@ -157,41 +167,42 @@ int main(int argc, char *argv[]) {
     } else {
         puts("\t\t\t\t FAILED\n");
     }
+    
+//    iterateAndPrintBlock();
 
-
-    // Test 5: Realloc test (with Next Fit)
-    puts("Test 5: Check for Reallocation with Next Fit...");
-    // Writes some value pointed by the pointer
-    if (cp3 != NULL && cp4 != NULL) {
-        *cp3 = 427;
-        *cp4 = 310;
-    }
-
-//    Calling realloc
-//    sprintf(str, "cp3 old location %p", cp3);
-//    puts(str);
-
-    cp3 = (int *) sma_realloc(cp3, 16 * 1024 * 5);
-    cp4 = (int *) sma_realloc(cp4, 16 * 1024 * 3);
-
-//    sprintf(str, "cp3 new location %p. expected %p", cp3, c[27]);
+//    // Test 5: Realloc test (with Next Fit)
+//    puts("Test 5: Check for Reallocation with Next Fit...");
+//    // Writes some value pointed by the pointer
+//    if (cp3 != NULL && cp4 != NULL) {
+//        *cp3 = 427;
+//        *cp4 = 310;
+//    }
+//
+////    Calling realloc
+////    sprintf(str, "cp3 old location %p", cp3);
+////    puts(str);
+//
+//    cp3 = (int *) sma_realloc(cp3, 16 * 1024 * 5);
+//    cp4 = (int *) sma_realloc(cp4, 16 * 1024 * 3);
+//
+////    sprintf(str, "cp3 new location %p. expected %p", cp3, c[27]);
+////    puts(str);
+////
+////    puts("--------------------------------------------");
+//
+//    sprintf(str, "Content of cp3 %d, content of cp4 %d", *cp3, *cp4);
 //    puts(str);
 //
-//    puts("--------------------------------------------");
-
-    sprintf(str, "Content of cp3 %d, content of cp4 %d", *cp3, *cp4);
-    puts(str);
-
-    if (cp3 == c2[27] && cp3 != NULL && cp4 == c2[8] && cp4 != NULL) {
-        //	Test the Data stored in the memory blocks
-        if (*cp3 == 427 && *cp4 == 310) {
-            puts("\t\t\t\t PASSED\n");
-        } else {
-            puts("\t\t\t\t FAILED\n");
-        }
-    } else {
-        puts("\t\t\t\t FAILED\n");
-    }
+//    if (cp3 == c2[27] && cp3 != NULL && cp4 == c2[8] && cp4 != NULL) {
+//        //	Test the Data stored in the memory blocks
+//        if (*cp3 == 427 && *cp4 == 310) {
+//            puts("\t\t\t\t PASSED\n");
+//        } else {
+//            puts("\t\t\t\t FAILED\n");
+//        }
+//    } else {
+//        puts("\t\t\t\t FAILED\n");
+//    }
 //
 //
 //    iterateAndPrintBlock();
