@@ -26,7 +26,6 @@
 #include <stdlib.h>
 #include "sma.h"
 
-//e134ecf
 int main(int argc, char *argv[]) {
     
     int i, count = 0;

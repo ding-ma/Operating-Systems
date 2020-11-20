@@ -192,5 +192,7 @@ int *getPreviousMemoryLocation(int *ptr);
 /**
  * Helper function to print the entire memory in order to see what is free or not.
  * Used to debug, to get a big picture of what is going on.
+ *
+ * Note: Printed output is in KB.
  */
 void iterateAndPrintBlock();
