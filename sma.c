@@ -185,11 +185,21 @@ void *sma_realloc(void *ptr, int size) {
 
 
 void *allocate_pBrk(int size) {
-    sbrkCounter++;
     int *newBlock = NULL;
     int excessSize;
     
-    newBlock = sbrk(size + MAX_TOP_FREE + HEADER_SIZE); // we will always get the maximum size
+    if (sbrkCounter == 0){
+        newBlock = sbrk(size + MAX_TOP_FREE + HEADER_SIZE); // we will always get the maximum size
+    } else {
+        if (getIsMemoryFree(endOfMemory)){
+            sbrk(-getSizeOfMemory(endOfMemory));
+            endOfMemory -= getSizeOfMemory(endOfMemory);
+            newBlock = sbrk(size + MAX_TOP_FREE + HEADER_SIZE); // we will always get the maximum size
+        } else {
+            newBlock = sbrk(size + MAX_TOP_FREE + HEADER_SIZE); // we will always get the maximum size
+        }
+    }
+   
     excessSize = MAX_TOP_FREE;
     
     if (startOfMemory == NULL) {
@@ -206,6 +216,7 @@ void *allocate_pBrk(int size) {
     endOfMemory = getNextMemoryLocation(newBlock);
     newTag(endOfMemory, excessSize, 1);
     
+    sbrkCounter++;
     return newBlock;
 }
 
