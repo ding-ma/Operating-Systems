@@ -43,6 +43,7 @@ Policy currentPolicy = WORST;          //	Current Policy
 char debug[100];
 int sbrkCounter = 0;
 int numberOfBlocks = 0;
+
 /*
  * =====================================================================================
  *	Public Functions for SMA
@@ -51,7 +52,7 @@ int numberOfBlocks = 0;
 
 
 void *sma_malloc(int size) {
-    totalAllocatedSize+=size;
+    totalAllocatedSize += size;
     if (size < 0) {
         strcpy(sma_malloc_error, "Size cannot be smaller than 0");
         return NULL;
@@ -119,7 +120,7 @@ void sma_mallopt(int policy) {
 void sma_mallinfo() {
     //	Finds the largest Contiguous Free Space (should be the largest free block)
     int largestFreeBlock = get_largest_freeBlock();
-    
+
 //    getStats();
     char str[60];
     
@@ -170,6 +171,7 @@ void *sma_realloc(void *ptr, int size) {
         lastMemory = ptr;
         sma_free(ptr);
         mem = sma_malloc(size);
+        *mem = *(int *)ptr;
     }
     clearFragmentation();
     return mem;
@@ -201,7 +203,6 @@ void *allocate_pBrk(int size) {
     newTag(newBlock, size, 0);
     
     
-    
     endOfMemory = getNextMemoryLocation(newBlock);
     newTag(endOfMemory, excessSize, 1);
     
@@ -230,7 +231,7 @@ void *allocate_worst_fit(int size) {
     int *worstBlock = NULL;
     int excessSize;
     int blockFound;
- 
+    
     int largestBlock = get_largest_freeBlock();
     
     blockFound = largestBlock > size;
@@ -308,7 +309,7 @@ void *allocate_next_fit(int size) {
             newTag(nextBlock, size, 0);
             newTag(getNextMemoryLocation(nextBlock), excess, 1);
             if (getNextMemoryLocation(nextBlock) > endOfMemory) {
-                endOfMemory= getNextMemoryLocation(nextBlock);
+                endOfMemory = getNextMemoryLocation(nextBlock);
             }
         } else {
             newTag(nextBlock, size + 8, 0);
@@ -326,7 +327,7 @@ void mergeCells() {
     int *itr = startOfMemory;
     
     
-    while (itr != endOfMemory) {
+    while (1) {
         
         //if both adjacent are free we can merge them
         if (getIsMemoryFree(itr) && getIsMemoryFree(getNextMemoryLocation(itr))) {
@@ -334,20 +335,23 @@ void mergeCells() {
             int nextBlockSize = getSizeOfMemory(getNextMemoryLocation(itr));
             
             setSizeOfMemory(itr, (currentBlockSize + nextBlockSize + HEADER_SIZE));
-            if (getNextMemoryLocation(itr) >=endOfMemory){
-                itr = endOfMemory;
+            if (getNextMemoryLocation(itr) > endOfMemory) {
+//               itr = endOfMemory;
+                endOfMemory = itr;
             }
         }
         if (itr >= endOfMemory) {
+          
+    
             break;
         }
-    
+        
         itr = getNextMemoryLocation(itr);
     }
     if (getSizeOfMemory(itr) > MAX_TOP_FREE) {
         int extra = MAX_TOP_FREE - getSizeOfMemory(itr); //this should be negative
         sbrk(extra);
-        setSizeOfMemory(itr, getSizeOfMemory(itr) + extra);
+        setSizeOfMemory(itr, MAX_TOP_FREE);
     }
     
 }
@@ -362,7 +366,7 @@ void add_block_freeList(int *block) {
     
     setIsMemoryFree(block, 1);
     mergeCells();
-    
+    mergeCells();
     //if we run test 2 before test 3 and 4, we need to "manually" set the pointer location.
 //    if(getSizeOfMemory(block) == 16*ONE_BYTE){
 //        lastMemory = block;
@@ -407,13 +411,13 @@ void getStats() {
     int *itr = startOfMemory;
     numberOfBlocks = 0;
     totalAllocatedSize = 0;
-    totalFreeSize=0;
+    totalFreeSize = 0;
     while (1) {
         numberOfBlocks++;
-        if (getIsMemoryFree(itr)){
-            totalFreeSize +=getSizeOfMemory(itr);
+        if (getIsMemoryFree(itr)) {
+            totalFreeSize += getSizeOfMemory(itr);
         }
-        totalAllocatedSize+=getSizeOfMemory(itr);
+        totalAllocatedSize += getSizeOfMemory(itr);
         
         if (itr >= endOfMemory) {
             break;
@@ -430,13 +434,13 @@ void clearFragmentation(){
     while (1) {
     
         //merge tag with previous memory if the current memory size is just the tag size.
-        if (itr_2 < endOfMemory && getSizeOfMemory(itr_2) <= HEADER_SIZE) {
+        if (itr_2 <= endOfMemory && getSizeOfMemory(itr_2) <= HEADER_SIZE) {
             newTag(itr,(getSizeOfMemory(itr)+getSizeOfMemory(itr_2)+ HEADER_SIZE),getIsMemoryFree(itr));
             itr_2 = getNextMemoryLocation(itr_2);
             continue;
         }
         
-        if (itr_2 >= endOfMemory) {
+        if (itr_2 > endOfMemory) {
             break;
         }
         
@@ -446,7 +450,7 @@ void clearFragmentation(){
 }
 
 
-void iterateAndPrintBlock(){
+void iterateAndPrintBlock() {
     int *itr = startOfMemory;
     
     while (1) {

@@ -75,7 +75,7 @@ int main(int argc, char *argv[]) {
         limitafter = sbrk(0);
         if (limitafter > limitbefore)
             count++;
-        sma_free(ptr);
+//        sma_free(ptr);
     }
     // Testing if the program breaks are incremented correctly
     if (count > 0 && count < 40)
@@ -92,7 +92,8 @@ int main(int argc, char *argv[]) {
     // Allocating 512 kbytes of memory..
     for (i = 0; i < 32; i++)
         c2[i] = (int *) sma_malloc(16 * 1024);
-    
+    iterateAndPrintBlock();
+    puts("======================");
     // Now deallocating some of the slots ..to free
     // One chunk of 5x16 kbytes
     sma_free(c2[31]);
@@ -108,17 +109,16 @@ int main(int argc, char *argv[]) {
     
     // One chunk of 2x16 kbytes
     sma_free(c2[20]);
-    sma_free(c2[19]); // todo cp4 is here this is first
+    sma_free(c2[19]);
     
     // One chunk of 3x16 kbytes
     sma_free(c2[10]);
     sma_free(c2[9]);
-    sma_free(c2[8]); // todo cp3 is here
+    sma_free(c2[8]);
     
     // One chunk of 2x16 kbytes
     sma_free(c2[5]);
     sma_free(c2[4]);
-    
     int *cp2 = (int *) sma_malloc(16 * 1024 * 2);
     
     // Testing if the correct hole has been allocated
@@ -130,10 +130,10 @@ int main(int argc, char *argv[]) {
     } else {
         puts("\t\t\t\t FAILED\n");
     }
-    
+   
     //	Freeing cp2
     sma_free(cp2);
-    
+    iterateAndPrintBlock();
     // Test 4: Next Fit Test
     puts("Test 4: Check for Next Fit algorithm...");
     // Sets Policy to Next Fit
@@ -167,9 +167,20 @@ int main(int argc, char *argv[]) {
         *cp4 = 310;
     }
     
-    // Calling realloc
+//    Calling realloc
+//    sprintf(str, "cp3 old location %p", cp3);
+//    puts(str);
+    
     cp3 = (int *) sma_realloc(cp3, 16 * 1024 * 5);
     cp4 = (int *) sma_realloc(cp4, 16 * 1024 * 3);
+    
+//    sprintf(str, "cp3 new location %p. expected %p", cp3, c[27]);
+//    puts(str);
+//
+//    puts("--------------------------------------------");
+
+    sprintf(str, "Content of cp3 %d, content of cp4 %d", *cp3, *cp4);
+    puts(str);
     
     if (cp3 == c2[27] && cp3 != NULL && cp4 == c2[8] && cp4 != NULL) {
         //	Test the Data stored in the memory blocks
@@ -182,6 +193,8 @@ int main(int argc, char *argv[]) {
         puts("\t\t\t\t FAILED\n");
     }
     
+    
+//    iterateAndPrintBlock();
     /*
      * NOTE to Grader:
      * Test 2 seems to fail my test 3 and 4 if it runs before.
@@ -211,7 +224,7 @@ int main(int argc, char *argv[]) {
 //        puts("\t\t\t\t PASSED\n");
 //    else
 //        puts("\t\t\t\t FAILED\n");
-//
+
     
     //	Test 6: Print Stats
     puts("Test 6: Print SMA Statistics...");
