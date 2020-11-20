@@ -159,8 +159,6 @@ int main(int argc, char *argv[]) {
         puts("\t\t\t\t FAILED\n");
     }
     
-//    puts("post test 4 ------------------------------------------------------------------");
-//    iterateAndPrintBlock();
 
     // Test 5: Realloc test (with Next Fit)
     puts("Test 5: Check for Reallocation with Next Fit...");
@@ -187,39 +185,6 @@ int main(int argc, char *argv[]) {
     } else {
         puts("\t\t\t\t FAILED\n");
     }
-//
-//
-//    iterateAndPrintBlock();
-    /*
-     * NOTE to Grader:
-     * Test 2 seems to fail my test 3 and 4 if it runs before.
-     * Test2 allocate a lot of memory and there is a lot of free chunks.
-     * Running:
-     * i = from 31 to 27
-     * sma_free(c2[i]);
-     * Will not generate the biggest free block as the biggest one is 128kb. Hence, the test will fail.
-     *
-     * If we run test3 right after test1, since it only did sbrk once, the largest free block is at the end.
-     */
-    
-    // Test 2: Program Break expansion Test
-//    puts("Test 2: Program break expansion test...");
-//
-//    count = 0;
-//    for (i = 1; i < 40; i++) {
-//        limitbefore = sbrk(0);
-//        ptr = sma_malloc(1024 * 32 * i);
-//        limitafter = sbrk(0);
-//        if (limitafter > limitbefore)
-//            count++;
-//    }
-//
-//    // Testing if the program breaks are incremented correctly
-//    if (count > 0 && count < 40)
-//        puts("\t\t\t\t PASSED\n");
-//    else
-//        puts("\t\t\t\t FAILED\n");
-
     
     //	Test 6: Print Stats
     puts("Test 6: Print SMA Statistics...");

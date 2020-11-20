@@ -33,16 +33,17 @@ typedef enum {
     NEXT
 } Policy;
 
-char sma_malloc_error[100];
-int *startOfMemory = NULL;              //	The pointer to the HEAD of the doubly linked memory list
-int *endOfMemory = NULL;              //	The pointer to the TAIL of the doubly linked memory list
+char sma_malloc_error[100];              // used for error reporting
+int *startOfMemory = NULL;               //	The pointer to the HEAD of the doubly linked memory list
+int *endOfMemory = NULL;                //	The pointer to the TAIL of the doubly linked memory list
 int *lastMemory = NULL;                 // last memory location of NEXT FIT policy
-unsigned long totalAllocatedSize = 0; //	Total Allocated memory in Bytes
-unsigned long totalFreeSize = 0;      //	Total Free memory in Bytes in the free memory list
-Policy currentPolicy = WORST;          //	Current Policy
-char debug[100];
-int sbrkCounter = 0;
-int numberOfBlocks = 0;
+unsigned long totalAllocatedSize = 0;   //	Total Allocated memory in Bytes
+unsigned long totalFreeSize = 0;        //	Total Free memory in Bytes in the free memory list
+Policy currentPolicy = WORST;           //	Current Policy
+char debug[100];                        // used to debug
+int sbrkCounter = 0;                    // counter for sbkr
+int numberOfBlocks = 0;                 // counter for total number of blocks
+
 
 /*
  * =====================================================================================
@@ -50,9 +51,7 @@ int numberOfBlocks = 0;
  * =====================================================================================
  */
 
-
 void *sma_malloc(int size) {
-    totalAllocatedSize += size;
     if (size < 0) {
         strcpy(sma_malloc_error, "Size cannot be smaller than 0");
         return NULL;
@@ -99,7 +98,6 @@ void sma_free(void *ptr) {
     else if (ptr > sbrk(0)) {
         puts("Error: Attempting to free unallocated space!");
     } else {
-        totalFreeSize += getSizeOfMemory(ptr);
         //	Adds the block to the free memory list
         add_block_freeList(ptr);
         clearFragmentation();
@@ -118,10 +116,9 @@ void sma_mallopt(int policy) {
 
 
 void sma_mallinfo() {
+    getStats();
     //	Finds the largest Contiguous Free Space (should be the largest free block)
     int largestFreeBlock = get_largest_freeBlock();
-
-//    getStats();
     char str[60];
     
     //	Prints the SMA Stats
@@ -157,25 +154,27 @@ void *sma_realloc(void *ptr, int size) {
         return NULL;
     }
     
-    if (getSizeOfMemory(ptr) > size) {
+    if (getSizeOfMemory(ptr) > size) { //if the size is big enough we can attempt to use it
         int excess = getSizeOfMemory(ptr);
         if (excess > HEADER_SIZE) {
             setIsMemoryFree(ptr, 0);
         } else { //chop of the size the request wants and set the rest as free
             newTag(ptr, size, 0);
-            remove_block_freeList(ptr);
+            setIsMemoryFree(ptr, 0);
             newTag(getNextMemoryLocation(ptr), excess, 1);
             add_block_freeList(getNextMemoryLocation(ptr));
         }
-    } else {
-//        lastMemory = st;
+    } else { //if not, find a new block
         sma_free(ptr);
         mem = sma_malloc(size);
         *mem = *(int *) ptr;
     }
     clearFragmentation();
+    
     return mem;
 }
+
+
 
 /*
  * =====================================================================================
@@ -183,8 +182,12 @@ void *sma_realloc(void *ptr, int size) {
  * =====================================================================================
  */
 
-
 void *allocate_pBrk(int size) {
+    //	TODO: 	Allocate memory by incrementing the Program Break by calling sbrk() or brk()
+    //	Hint:	Getting an exact "size" of memory might not be the best idea. Why?
+    //			Also, if you are getting a larger memory, you need to put the excess in the free list
+    
+    //	Allocates the Memory Block
     int *newBlock = NULL;
     
     if (sbrkCounter != 0) {
@@ -204,14 +207,9 @@ void *allocate_pBrk(int size) {
     if (startOfMemory == NULL) {
         startOfMemory = newBlock;
     }
-    //	TODO: 	Allocate memory by incrementing the Program Break by calling sbrk() or brk()
-    //	Hint:	Getting an exact "size" of memory might not be the best idea. Why?
-    //			Also, if you are getting a larger memory, you need to put the excess in the free list
     
-    //	Allocates the Memory Block
+    
     newTag(newBlock, size, 0);
-    
-    
     endOfMemory = getNextMemoryLocation(newBlock);
     newTag(endOfMemory, MAX_TOP_FREE, 1);
     
@@ -232,7 +230,6 @@ void *allocate_freeList(int size) {
     } else {
         pMemory = NULL;
     }
-    
     return pMemory;
 }
 
@@ -324,35 +321,29 @@ void *allocate_next_fit(int size) {
         } else {
             newTag(nextBlock, size + 8, 0);
         }
-        
     } else {
         //	Assigns invalid address if appropriate block not found in free list
         nextBlock = (void *) -2;
     }
-    
     return nextBlock;
 }
+
 
 void mergeCells() {
     int *itr = startOfMemory;
     
-    
     while (1) {
-        
         //if both adjacent are free we can merge them
         if (getIsMemoryFree(itr) && getIsMemoryFree(getNextMemoryLocation(itr))) {
             int currentBlockSize = getSizeOfMemory(itr);
             int nextBlockSize = getSizeOfMemory(getNextMemoryLocation(itr));
             
             setSizeOfMemory(itr, (currentBlockSize + nextBlockSize + HEADER_SIZE));
-            if (getNextMemoryLocation(itr) > endOfMemory) {
-//               itr = endOfMemory;
+            if (getNextMemoryLocation(itr) > endOfMemory) { //move end memory ptr if the last block got merged
                 endOfMemory = itr;
             }
         }
         if (itr >= endOfMemory) {
-            
-            
             break;
         }
         
@@ -376,20 +367,6 @@ void add_block_freeList(int *block) {
     
     setIsMemoryFree(block, 1);
     mergeCells();
-    mergeCells();
-    //if we run test 2 before test 3 and 4, we need to "manually" set the pointer location.
-//    if(getSizeOfMemory(block) == 16*ONE_BYTE){
-//        lastMemory = block;
-//    }
-}
-
-
-void remove_block_freeList(void *block) {
-    //	TODO: 	Remove the block from the free list
-    //	Hint: 	You need to update the pointers in the free blocks before and after this block.
-    //			You also need to remove any TAG in the free block.
-    
-    setIsMemoryFree(block, 0);
 }
 
 
@@ -485,26 +462,31 @@ int getSizeOfMemory(int *ptr) {
     return *(int *) ptr;
 }
 
+
 void setSizeOfMemory(int *ptr, int size) {
     ptr = ptr - 8;
     *ptr = size;
 }
+
 
 int getIsMemoryFree(int *ptr) {
     ptr = ptr - 4;
     return *(int *) ptr;
 }
 
+
 void setIsMemoryFree(int *ptr, int free) {
     ptr = ptr - 4;
     *ptr = free;
 }
+
 
 int *getNextMemoryLocation(int *ptr) {
     int size = getSizeOfMemory(ptr);
     ptr = (ptr + (size + HEADER_SIZE) / 4);
     return ptr;
 }
+
 
 void newTag(int *ptr, int size, int isFree) {
     setSizeOfMemory(ptr, size);

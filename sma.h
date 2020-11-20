@@ -112,13 +112,6 @@ static void add_block_freeList(int *block);
 
 
 /**
- * Removes a memory block from the the free memory list
- * @param block ptr to block
- */
-static void remove_block_freeList(void *block);
-
-
-/**
  *	Gets largest free block in the list
  *  @return largest Block Size
  */
@@ -196,4 +189,8 @@ void newTag(int *ptr, int size, int isFree);
 int *getPreviousMemoryLocation(int *ptr);
 
 
+/**
+ * Helper function to print the entire memory in order to see what is free or not.
+ * Used to debug, to get a big picture of what is going on.
+ */
 void iterateAndPrintBlock();
