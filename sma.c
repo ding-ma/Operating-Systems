@@ -168,7 +168,7 @@ void *sma_realloc(void *ptr, int size) {
             add_block_freeList(getNextMemoryLocation(ptr));
         }
     } else {
-        lastMemory = ptr;
+//        lastMemory = st;
         sma_free(ptr);
         mem = sma_malloc(size);
         *mem = *(int *) ptr;
@@ -285,7 +285,7 @@ void *allocate_next_fit(int size) {
     int *itr = lastMemory;
     while (1) {
         
-        if (getSizeOfMemory(itr) >= size && getIsMemoryFree(itr)) {
+        if (getIsMemoryFree(itr) && getSizeOfMemory(itr) >= size) {
             nextBlock = itr;
             lastMemory = itr;
             blockFound = 1;
