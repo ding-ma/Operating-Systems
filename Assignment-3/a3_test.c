@@ -62,14 +62,14 @@ int main(int argc, char *argv[]) {
         puts("\t\t\t\t PASSED\n");
     else
         puts("\t\t\t\t FAILED\n");
-    
-    
-    puts("Post Test 1-----------------------");
-    iterateAndPrintBlock();
 
+
+//    puts("Post Test 1-----------------------");
+//    iterateAndPrintBlock();
+    
     // Test 2: Program Break expansion Test
     puts("Test 2: Program break expansion test...");
-
+    
     count = 0;
     for (i = 1; i < 40; i++) {
         limitbefore = sbrk(0);
@@ -84,16 +84,16 @@ int main(int argc, char *argv[]) {
         puts("\t\t\t\t PASSED\n");
     else
         puts("\t\t\t\t FAILED\n");
-    
-    
-    puts("Post Test 2-----------------------");
-    iterateAndPrintBlock();
+
+
+//    puts("Post Test 2-----------------------");
+//    iterateAndPrintBlock();
 
 //     Test 3: Worst Fit Test
     puts("Test 3: Check for Worst Fit algorithm...");
     // Sets Policy to Worst Fit
     sma_mallopt(WORST_FIT);
-
+    
     // Allocating 512 kbytes of memory..
     for (i = 0; i < 32; i++)
         c2[i] = (int *) sma_malloc(16 * 1024);
@@ -139,15 +139,15 @@ int main(int argc, char *argv[]) {
     
     //	Freeing cp2
     sma_free(cp2);
-    
-    puts("Post Test 3-----------------------");
-    iterateAndPrintBlock();
+
+//    puts("Post Test 3-----------------------");
+//    iterateAndPrintBlock();
     
     // Test 4: Next Fit Test
     puts("Test 4: Check for Next Fit algorithm...");
     // Sets Policy to Next Fit
     sma_mallopt(NEXT_FIT);
-
+    
     int *cp3 = (int *) sma_malloc(16 * 1024 * 3);
     int *cp4 = (int *) sma_malloc(16 * 1024 * 2);
     
@@ -165,10 +165,10 @@ int main(int argc, char *argv[]) {
     } else {
         puts("\t\t\t\t FAILED\n");
     }
-    
-    
-    puts("Post Test 4-----------------------");
-    iterateAndPrintBlock();
+
+
+//    puts("Post Test 4-----------------------");
+//    iterateAndPrintBlock();
     
     // Test 5: Realloc test (with Next Fit)
     puts("Test 5: Check for Reallocation with Next Fit...");
@@ -177,7 +177,7 @@ int main(int argc, char *argv[]) {
         *cp3 = 427;
         *cp4 = 310;
     }
-
+    
     cp3 = (int *) sma_realloc(cp3, 16 * 1024 * 5);
     cp4 = (int *) sma_realloc(cp4, 16 * 1024 * 3);
 
@@ -195,16 +195,15 @@ int main(int argc, char *argv[]) {
     } else {
         puts("\t\t\t\t FAILED\n");
     }
-    
-    
-    puts("Post Test 5-----------------------");
-    iterateAndPrintBlock();
+
+
+//    puts("Post Test 5-----------------------");
+//    iterateAndPrintBlock();
     //	Test 6: Print Stats
     puts("Test 6: Print SMA Statistics...");
     puts("===============================");
     sma_mallinfo();
     
     
- 
     return (0);
 }
