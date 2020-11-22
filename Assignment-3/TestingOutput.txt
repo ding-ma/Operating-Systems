@@ -1,0 +1,57 @@
+Ran on Trottier computer:
+
+ding.ma@lab2-22:~/A4$ ll
+total 52
+drwxr-xr-x 2 ding.ma mcgill  4096 Nov 19 23:15 ./
+drwxr-xr-x 5 ding.ma mcgill  4096 Nov 19 23:14 ../
+-rw-r--r-- 1 ding.ma mcgill  5340 Nov 19 23:02 a3_test.c
+-rw-r--r-- 1 ding.ma mcgill   258 Nov 19 17:24 CMakeLists.txt
+-rw-r--r-- 1 ding.ma mcgill   535 Nov 19 23:11 Readme.txt
+-rw-r--r-- 1 ding.ma mcgill 15455 Nov 19 23:05 sma.c
+-rw-r--r-- 1 ding.ma mcgill  4607 Nov 19 22:58 sma.h
+-rw-r--r-- 1 ding.ma mcgill    29 Nov 19 23:14 TestingOutput.txt
+ding.ma@lab2-22:~/A4$ cmake .
+-- The C compiler identification is GNU 7.5.0
+-- Check for working C compiler: /usr/bin/cc
+-- Check for working C compiler: /usr/bin/cc -- works
+-- Detecting C compiler ABI info
+-- Detecting C compiler ABI info - done
+-- Detecting C compile features
+-- Detecting C compile features - done
+-- Configuring done
+-- Generating done
+-- Build files have been written to: /tmp/home/ding.ma/A4
+ding.ma@lab2-22:~/A4$ make
+Scanning dependencies of target sma
+[ 25%] Building C object CMakeFiles/sma.dir/sma.c.o
+[ 50%] Linking C static library libsma.a
+[ 50%] Built target sma
+Scanning dependencies of target a3_test
+[ 75%] Building C object CMakeFiles/a3_test.dir/a3_test.c.o
+[100%] Linking C executable a3_test
+[100%] Built target a3_test
+ding.ma@lab2-22:~/A4$ ./a3_test
+Test 1: Excess Memory Allocation...
+                                 PASSED
+
+Test 2: Program break expansion test...
+                                 PASSED
+
+Test 3: Check for Worst Fit algorithm...
+                                 PASSED
+
+Test 4: Check for Next Fit algorithm...
+                                 PASSED
+
+Test 5: Check for Reallocation with Next Fit...
+Content of cp3 427, content of cp4 310
+                                 PASSED
+
+Test 6: Print SMA Statistics...
+===============================
+Total number of memory blocks: 88
+Total number of bytes allocated: 26170464
+Total free space: 172112
+Size of largest contigious free space (in bytes): 49168
+sbrk called number called 42
+ding.ma@lab2-22:~/A4$
