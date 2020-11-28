@@ -1,8 +1,7 @@
 version: '3'
 services:
   c-compiler:
-    build: .
+    build: ghcr.io/ding-ma/ecse427_c-compiler:latest
     ports:
     - "3333:22"
     restart: always
-
