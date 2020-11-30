@@ -7,7 +7,7 @@ This will create the executables for the tests 1 to 6. It will also generate `su
 These are the two library files if other tests wants to be ran.
 
 ## To compile custom tests
-###First option
+### First option
 1. `gcc -o EXE_NAME YOUR_TEST  sut.a socket.a -pthread`
 1. `./EXE_NAME`
 
